@@ -63,20 +63,22 @@ create policy "rsvps_update" on rsvps for update using (true);
 --   Database → Replication → toggle families, events, rsvps tables ON
 
 -- ─── Seed: Events ─────────────────────────────────────────────────────────────
+-- Planning: home base is Corolla. Dinners stay close unless that day's activities
+-- already place the group farther south. For live DB updates see update-corolla-dinners.sql.
 
 insert into events
   (day, date, title, area, event_type, reserve, restaurant, description, note, link, sort_order)
 values
-  ('Day 1',  'July 5',    'Arrival + first group dinner',    'Kill Devil Hills',
-   'dinner',   true,  'Kill Devil Grill',
-   'Large casual dinner replacing Henry''s, which is closed.',
-   'Current working reservation target: 14 people.',
-   'https://www.killdevilgrillobx.com', 10),
+  ('Day 1',  'July 5',    'Arrival + Corolla group dinner',  'Corolla',
+   'dinner',   true,  'Uncle Ike''s Sandbar & Grill',
+   'First-night dinner close to the house in Corolla — easy after travel and great for large family groups. Uncle Ike''s is family friendly, handles big parties well, and keeps the first evening low-stress with minimal driving.',
+   'Current working reservation target: 14 people. Dinners are kept close to Corolla unless the day''s activities already place the group farther south.',
+   'https://uncleikesobx.com/', 10),
 
   ('Day 2',  'July 6',    'Waterfront group dinner',         'Nags Head / soundside',
    'dinner',   false, 'Miller''s Waterfront Restaurant',
-   'Sunset dinner over the sound. Good to track headcount even if no strict reservation is needed.',
-   'Working count can be approximate.',
+   'Sunset dinner over the sound — farther south while the group is already out that way.',
+   'Working count can be approximate. Dinners are kept close to Corolla unless the day''s activities already place the group farther south.',
    'https://millerswaterfront.com/', 20),
 
   ('Day 3',  'July 7',    'Wild horses tour',                'Corolla',
@@ -91,16 +93,16 @@ values
    'Currently mentioned for Robertha and Pia.',
    'https://www.outerbankskayaktours.com/alligator-river-kayak-tours/', 40),
 
-  ('Day 4',  'July 8',    'Seafood buffet dinner',           'Kill Devil Hills',
-   'dinner',   true,  'Captain George''s Seafood Buffet',
-   'Classic big-group seafood dinner night.',
-   'Current working reservation target: 19 people.',
-   'https://www.captaingeorges.com/', 50),
+  ('Day 4',  'July 8',    'Varied menu group dinner',        'Corolla',
+   'dinner',   true,  'Agave Roja',
+   'Mexican and Latin-inspired dinner in Corolla with seafood, steaks, chicken, and vegetarian-friendly choices — swapped from a seafood buffet so the week isn''t too seafood-centered. Corolla dinner after the kayak activity farther south.',
+   'Current working reservation target: 19 people. Dinners are kept close to Corolla unless the day''s activities already place the group farther south.',
+   'https://www.agaveroja.com/', 50),
 
   ('Day 5',  'July 9',    'Roanoke / Manteo / Bodie dinner', 'Manteo area',
    'dinner',   true,  'Tale of the Whale or Basnight''s Lone Cedar Cafe',
-   'Waterfront dinner still to be finalized.',
-   'Working reservation range: 15–19 people.',
+   'Waterfront dinner still to be finalized — Manteo area while the group explores Roanoke / Bodie that day.',
+   'Working reservation range: 15–19 people. Dinners are kept close to Corolla unless the day''s activities already place the group farther south.',
    'https://www.outerbanks.com/', 60),
 
   ('Day 6',  'July 10',   'Beach horseback ride',            'Frisco / Hatteras',
@@ -109,11 +111,11 @@ values
    'MG family wants all 4 spots.',
    'https://www.equineadventures.com/beach-rides.html', 70),
 
-  ('Day 7',  'July 11',   'Final dinner + toast',            'Nags Head',
-   'dinner',   true,  'Blue Moon Beach Grill',
-   'Closing family dinner with a farewell toast.',
-   'Current working reservation target: 14 people.',
-   'https://www.bluemoonbeachgrill.com/', 80),
+  ('Day 7',  'July 11',   'Final dinner + seafood boil at the house', 'Corolla',
+   'dinner',   true,  'Outer Banks Boil Company',
+   'Not a restaurant sit-down — a catered seafood boil at the rental (or take-home steam pots to cook at the house). Outer Banks Boil Company can set up, cook, and clean up for a special final-night group meal in Corolla with almost no driving.',
+   'Working catering / headcount target: 14 people. Request availability via Book Your Boil on their site.',
+   'https://www.corolla.outerbanksboilcompany.com/book-your-boil', 80),
 
   ('Extra',  'Flexible',  'Hang gliding lesson',             'Jockey''s Ridge',
    'activity', true,  'Kitty Hawk Kites',

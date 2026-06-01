@@ -139,7 +139,7 @@ function renderDays() {
           <div class="detail-list">
             <div class="detail-item">
               <h5>Description</h5>
-              <p>${escapeHtml(eventDescriptionText(ev))}</p>
+              <p>${escapeHtml(ev.description)}</p>
             </div>
             <div class="detail-item">
               <h5>Note</h5>
@@ -147,7 +147,7 @@ function renderDays() {
             </div>
             <div class="detail-item">
               <h5>Link</h5>
-              <p><a href="${escapeHtml(ev.link)}" target="_blank" rel="noopener noreferrer">Open venue / activity site</a></p>
+              <p><a href="${escapeHtml(ev.link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(linkLabel)}</a></p>
             </div>
             <div class="detail-item">
               <h5>Who's going <span style="font-weight:400;color:var(--color-text-muted)">(${count} people)</span></h5>
