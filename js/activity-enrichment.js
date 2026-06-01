@@ -90,6 +90,21 @@ const ACTIVITY_PRESETS = [
     kids_friendly: true,
     grandparent_friendly: false,
     tags: ['adventure', 'reservation', 'family-favorite']
+  },
+  {
+    match: /fishing day|fishing charter|family fishing/i,
+    short_description: 'Family-friendly fishing in the OBX — charter, inshore trip, or relaxed outing; easier than horseback riding.',
+    full_description: 'Plan a family-friendly fishing day in the Outer Banks: a half-day charter, a shorter inshore trip from Corolla or nearby, or a more relaxed pier or sound-side option. Good for guests who want an outdoor July 10 activity without the longer drive and intensity of beach horseback riding on Hatteras.',
+    best_for: 'Families wanting a calmer outdoor option, beginners, guests skipping horseback riding, mixed ages',
+    effort_level: 'relaxed',
+    indoor_outdoor: 'outdoor',
+    accessibility: 'Boat charters vary by operator; ask about motion sensitivity and seating. Pier fishing may be easier for limited mobility.',
+    reservation_info: 'Advance reservation recommended, especially in July. Morning charters often best for heat and wind.',
+    family_fit: 'Strong alternative on July 10 for anyone who prefers fishing over horseback riding; confirm age limits with the charter.',
+    area_tag: 'corolla',
+    kids_friendly: true,
+    grandparent_friendly: true,
+    tags: ['family-favorite', 'outdoor', 'reservation']
   }
 ];
 

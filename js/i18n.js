@@ -421,6 +421,22 @@ const EVENT_LOCALES = [
     }
   },
   {
+    match: ev => /fishing day|fishing charter|family fishing/i.test(`${ev.title} ${ev.restaurant}`),
+    es: {
+      title: 'Día de pesca en OBX',
+      area: 'Corolla / Outer Banks',
+      description: 'Día de pesca familiar en Outer Banks: charter, viaje costero corto u opción más relajada. Buena alternativa al paseo a caballo.',
+      note: 'Se recomienda reservar con anticipación, especialmente en julio.',
+      short_description: 'Pesca familiar en OBX — charter, costa o salida relajada; menos intenso que cabalgata.',
+      full_description: 'Planee un día de pesca familiar: charter de medio día, viaje costero desde Corolla o pesca en muelle/sound. Ideal para quienes quieren actividad al aire libre el 10 de julio sin el viaje largo a Hatteras.',
+      best_for: 'Familias que prefieren algo más tranquilo, principiantes, quienes no van a caballo',
+      effort_level: 'relaxed',
+      accessibility: 'Los charters varían; pregunte por mareo y asientos. El muelle puede ser más accesible.',
+      reservation_info: 'Reservación recomendada con anticipación, sobre todo en julio.',
+      family_fit: 'Buena alternativa el 10 de julio; confirme edades mínimas con el charter.'
+    }
+  },
+  {
     match: ev => /final dinner.*boil|outer banks boil/i.test(`${ev.title} ${ev.restaurant}`),
     es: {
       title: 'Cena final + seafood boil en la casa',
