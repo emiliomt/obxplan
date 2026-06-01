@@ -139,7 +139,7 @@ function renderDays() {
           <div class="detail-list">
             <div class="detail-item">
               <h5>Description</h5>
-              <p>${escapeHtml(ev.description)}</p>
+              <p>${escapeHtml(eventDescriptionText(ev))}</p>
             </div>
             <div class="detail-item">
               <h5>Note</h5>

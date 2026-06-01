@@ -36,3 +36,28 @@ function initThemeToggle() {
 function getFamilyFromUrl() {
   return new URLSearchParams(window.location.search).get('family');
 }
+
+// Typical non-rush drive times from Corolla (home base); summer traffic can add 15+ min.
+const DRIVE_FROM_COROLLA_MINUTES = {
+  'Kill Devil Hills': 40,
+  'Nags Head / soundside': 50,
+  'Nags Head': 50,
+  "Jockey's Ridge": 50,
+  'Alligator River': 55,
+  'Manteo area': 55,
+  'Frisco / Hatteras': 90,
+  'Corolla': 0,
+};
+
+function driveTimeFromCorolla(area) {
+  const minutes = DRIVE_FROM_COROLLA_MINUTES[area];
+  if (minutes == null || minutes === 0) return '';
+  return `~${minutes} min drive from Corolla.`;
+}
+
+function eventDescriptionText(ev) {
+  const drive = driveTimeFromCorolla(ev.area);
+  if (!drive) return ev.description || '';
+  const base = (ev.description || '').trim();
+  return base ? `${base} ${drive}` : drive;
+}
