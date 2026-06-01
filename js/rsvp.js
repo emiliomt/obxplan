@@ -1,11 +1,15 @@
-// RSVP page: per-attendee Going / Not Going for each event
+// RSVP page: per-attendee Going / Not Going, enriched activity cards
 
 let currentAttendee = null;
 let attendees = [];
 let events  = [];
 let rsvps   = [];
-let filter  = 'all';
+let viewMode = 'all';
+const activeFacets = new Set();
+const expandedIds = new Set();
 let channel = null;
+
+const AE = () => window.ActivityEnrichment;
 
 async function init() {
   initThemeToggle();
@@ -16,6 +20,9 @@ async function init() {
       db.getEvents(),
       db.getAllAttendeeRsvps()
     ]);
+    events = events.map(ev =>
+      ev.event_type === 'activity' && AE() ? AE().enrichEvent(ev) : ev
+    );
   } catch (err) {
     showDaysError('Could not load trip data.', err.message);
     showToast('Failed to load data: ' + err.message, 'error');
@@ -39,6 +46,7 @@ async function init() {
   }
 
   updateAttendeeHeader();
+  wireFilters();
   renderDays();
   renderSummary();
 
@@ -49,6 +57,9 @@ async function init() {
         db.getEvents(),
         db.getAllAttendeeRsvps()
       ]);
+      events = events.map(ev =>
+        ev.event_type === 'activity' && AE() ? AE().enrichEvent(ev) : ev
+      );
       if (currentAttendee) {
         currentAttendee = attendees.find(a => a.id === currentAttendee.id) || currentAttendee;
       }
@@ -58,11 +69,30 @@ async function init() {
     } catch { /* silent */ }
   });
 
-  document.getElementById('showAllBtn').addEventListener('click', () => setFilter('all'));
-  document.getElementById('showDinnersBtn').addEventListener('click', () => setFilter('dinners'));
-  document.getElementById('showActivitiesBtn').addEventListener('click', () => setFilter('activities'));
   document.getElementById('fillGroupDinnersBtn').addEventListener('click', confirmGroupDinners);
   document.getElementById('copySummaryBtn').addEventListener('click', copySummary);
+}
+
+function wireFilters() {
+  document.querySelectorAll('#viewFilters [data-view]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      viewMode = btn.dataset.view;
+      document.querySelectorAll('#viewFilters .filter-btn').forEach(b => {
+        b.classList.toggle('is-active', b === btn);
+      });
+      renderDays();
+    });
+  });
+
+  document.querySelectorAll('#activityFacets [data-facet]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const facet = btn.dataset.facet;
+      if (activeFacets.has(facet)) activeFacets.delete(facet);
+      else activeFacets.add(facet);
+      btn.classList.toggle('is-active', activeFacets.has(facet));
+      renderDays();
+    });
+  });
 }
 
 function updateAttendeeHeader() {
@@ -82,16 +112,20 @@ function updateAttendeeHeader() {
   navEl.textContent = currentAttendee.full_name;
 }
 
-function setFilter(f) {
-  filter = f;
-  renderDays();
-}
-
 function visibleEvents() {
-  const list = events ?? [];
-  if (filter === 'dinners')    return list.filter(e => e.event_type === 'dinner');
-  if (filter === 'activities') return list.filter(e => e.event_type === 'activity');
-  return list;
+  const enrich = AE();
+  return events.filter(ev => {
+    if (enrich && !enrich.matchesViewMode(ev, viewMode)) return false;
+    if (!enrich) {
+      if (viewMode === 'dinners' && ev.event_type !== 'dinner') return false;
+      if (viewMode === 'activities' && ev.event_type !== 'activity') return false;
+      if (viewMode === 'kids' || viewMode === 'easy') return false;
+    }
+    for (const facet of activeFacets) {
+      if (enrich && !enrich.matchesFacet(ev, facet)) return false;
+    }
+    return true;
+  });
 }
 
 function attendeeRsvp(attendeeId, eventId) {
@@ -137,6 +171,52 @@ function linkLabelFor(ev) {
     : 'Open venue / activity site';
 }
 
+function indoorOutdoorLabel(value) {
+  if (value === 'both') return 'Indoor & outdoor';
+  if (value === 'indoor') return 'Indoor';
+  return 'Outdoor';
+}
+
+function renderActivityBadges(ev) {
+  const badges = AE() ? AE().activityBadges(ev) : [];
+  if (!badges.length) return '';
+  return `<div class="activity-badges" aria-label="Activity highlights">${badges.map(b =>
+    `<span class="meta-badge meta-badge--${escapeHtml(b.key)}">${b.icon} ${escapeHtml(b.label)}</span>`
+  ).join('')}</div>`;
+}
+
+function renderExpandedActivityDetails(ev) {
+  const effort = AE() ? AE().effortLabel(ev.effort_level) : ev.effort_level;
+  const rows = [
+    ['Full description', ev.full_description],
+    ['Best for', ev.best_for],
+    ['Effort level', effort],
+    ['Indoor / outdoor', indoorOutdoorLabel(ev.indoor_outdoor)],
+    ['Accessibility', ev.accessibility],
+    ['Reservation info', ev.reservation_info || (ev.reserve ? 'Reservation needed.' : '')],
+    ['Why this fits the trip', ev.family_fit]
+  ].filter(([, val]) => val && String(val).trim());
+
+  if (!rows.length) return '';
+
+  return `
+    <div class="activity-details-grid">
+      ${rows.map(([label, val]) => `
+        <div class="activity-detail-row">
+          <h6>${escapeHtml(label)}</h6>
+          <p>${escapeHtml(val)}</p>
+        </div>
+      `).join('')}
+      ${ev.note ? `
+        <div class="activity-detail-row">
+          <h6>Trip note</h6>
+          <p>${escapeHtml(ev.note)}</p>
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
 function renderAttendeeRsvpRows(eventId) {
   const grouped = groupAttendees(attendees);
   return grouped.map(([familyGroup, members]) => `
@@ -166,66 +246,134 @@ function renderAttendeeRsvpRows(eventId) {
   `).join('');
 }
 
+function renderWhosGoing(count, going) {
+  const goingChips = going.length
+    ? `<div class="going-families">${going.map(n => `<span class="going-chip">${escapeHtml(n)}</span>`).join('')}</div>`
+    : '<p class="tiny" style="margin-top:4px">No confirmations yet</p>';
+  return `
+    <div class="detail-item">
+      <h5>Who's going <span style="font-weight:400;color:var(--color-text-muted)">(${count} ${count === 1 ? 'person' : 'people'})</span></h5>
+      ${goingChips}
+    </div>
+  `;
+}
+
+function renderActivityCard(ev) {
+  const count = eventGoingCount(ev.id);
+  const going = goingAttendeeNames(ev.id);
+  const expanded = expandedIds.has(ev.id);
+  const shortDesc = ev.short_description || ev.description || '';
+  const detailsId = `activity-details-${ev.id}`;
+
+  return `
+    <article class="day-card day-card--activity" data-kind="activity">
+      <div class="day-head">
+        <div>
+          <div class="tiny">${escapeHtml(ev.day)} · ${escapeHtml(ev.date)}</div>
+          <h4>${escapeHtml(ev.title)}</h4>
+          <div class="day-meta">${escapeHtml(ev.restaurant)} · ${escapeHtml(ev.area)}</div>
+        </div>
+        <div class="row day-head-badges">
+          ${renderActivityBadges(ev)}
+          <span class="count-pill" title="${count} people confirmed">${count}</span>
+        </div>
+      </div>
+      <div class="day-body day-body--attendees">
+        <div class="detail-list activity-summary">
+          <div class="detail-item detail-item--lead">
+            <p class="activity-short">${escapeHtml(shortDesc)}</p>
+            ${ev.link ? `<p class="activity-link"><a href="${escapeHtml(ev.link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(linkLabelFor(ev))}</a></p>` : ''}
+          </div>
+          <button type="button"
+            class="details-toggle"
+            aria-expanded="${expanded}"
+            aria-controls="${detailsId}"
+            onclick="toggleActivityDetails('${ev.id}')">
+            ${expanded ? 'Hide details' : 'More details'}
+            <span class="details-toggle-chevron" aria-hidden="true">${expanded ? '▴' : '▾'}</span>
+          </button>
+          <div id="${detailsId}" class="activity-details ${expanded ? 'is-open' : ''}">
+            ${renderExpandedActivityDetails(ev)}
+          </div>
+          ${renderWhosGoing(count, going)}
+        </div>
+        <div class="attendee-rsvp-panel">
+          <h5 class="attendee-rsvp-heading">RSVP by person</h5>
+          ${renderAttendeeRsvpRows(ev.id)}
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+function renderDinnerCard(ev) {
+  const count = eventGoingCount(ev.id);
+  const going = goingAttendeeNames(ev.id);
+  const reserveClass = ev.reserve ? 'reserve' : 'noreserve';
+  const reserveLabel = ev.reserve ? 'Reservation needed' : 'No reservation required';
+
+  return `
+    <article class="day-card" data-kind="dinner">
+      <div class="day-head">
+        <div>
+          <div class="tiny">${escapeHtml(ev.day)} · ${escapeHtml(ev.date)}</div>
+          <h4>${escapeHtml(ev.title)}</h4>
+          <div class="day-meta">${escapeHtml(ev.restaurant)} · ${escapeHtml(ev.area)}</div>
+        </div>
+        <div class="row">
+          <span class="badge ${reserveClass}">${reserveLabel}</span>
+          <span class="count-pill" title="${count} people confirmed">${count}</span>
+        </div>
+      </div>
+      <div class="day-body day-body--attendees">
+        <div class="detail-list">
+          <div class="detail-item">
+            <h5>Description</h5>
+            <p>${escapeHtml(ev.description)}</p>
+          </div>
+          ${ev.note ? `
+            <div class="detail-item">
+              <h5>Note</h5>
+              <p>${escapeHtml(ev.note)}</p>
+            </div>
+          ` : ''}
+          ${ev.link ? `
+            <div class="detail-item">
+              <h5>Link</h5>
+              <p><a href="${escapeHtml(ev.link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(linkLabelFor(ev))}</a></p>
+            </div>
+          ` : ''}
+          ${renderWhosGoing(count, going)}
+        </div>
+        <div class="attendee-rsvp-panel">
+          <h5 class="attendee-rsvp-heading">RSVP by person</h5>
+          ${renderAttendeeRsvpRows(ev.id)}
+        </div>
+      </div>
+    </article>
+  `;
+}
+
 function renderDays() {
   const container = document.getElementById('daysContainer');
   const visible   = visibleEvents();
 
   if (visible.length === 0) {
-    container.innerHTML = '<p class="empty-state">No events match this filter.</p>';
+    container.innerHTML = '<p class="empty-state">No events match this view or filter. Try clearing activity filters or switching the view.</p>';
     return;
   }
 
-  container.innerHTML = visible.map(ev => {
-    const count = eventGoingCount(ev.id);
-    const going = goingAttendeeNames(ev.id);
-    const reserveClass = ev.reserve ? 'reserve' : 'noreserve';
-    const reserveLabel = ev.reserve ? 'Reservation needed' : 'No reservation required';
-
-    const goingChips = going.length
-      ? `<div class="going-families">${going.map(n => `<span class="going-chip">${escapeHtml(n)}</span>`).join('')}</div>`
-      : '<p style="font-size:var(--text-xs);color:var(--color-text-faint);margin-top:4px">No confirmations yet</p>';
-
-    return `
-      <article class="day-card" data-kind="${ev.event_type}">
-        <div class="day-head">
-          <div>
-            <div class="tiny">${escapeHtml(ev.day)} · ${escapeHtml(ev.date)}</div>
-            <h4>${escapeHtml(ev.title)}</h4>
-            <div class="day-meta">${escapeHtml(ev.restaurant)} · ${escapeHtml(ev.area)}</div>
-          </div>
-          <div class="row">
-            <span class="badge ${reserveClass}">${reserveLabel}</span>
-            <span class="count-pill" title="${count} people confirmed">${count}</span>
-          </div>
-        </div>
-        <div class="day-body day-body--attendees">
-          <div class="detail-list">
-            <div class="detail-item">
-              <h5>Description</h5>
-              <p>${escapeHtml(ev.description)}</p>
-            </div>
-            <div class="detail-item">
-              <h5>Note</h5>
-              <p>${escapeHtml(ev.note)}</p>
-            </div>
-            <div class="detail-item">
-              <h5>Link</h5>
-              <p><a href="${escapeHtml(ev.link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(linkLabelFor(ev))}</a></p>
-            </div>
-            <div class="detail-item">
-              <h5>Who's going <span style="font-weight:400;color:var(--color-text-muted)">(${count} ${count === 1 ? 'person' : 'people'})</span></h5>
-              ${goingChips}
-            </div>
-          </div>
-          <div class="attendee-rsvp-panel">
-            <h5 class="attendee-rsvp-heading">RSVP by person</h5>
-            ${renderAttendeeRsvpRows(ev.id)}
-          </div>
-        </div>
-      </article>
-    `;
-  }).join('');
+  container.innerHTML = visible.map(ev =>
+    ev.event_type === 'activity' ? renderActivityCard(ev) : renderDinnerCard(ev)
+  ).join('');
 }
+
+function toggleActivityDetails(id) {
+  if (expandedIds.has(id)) expandedIds.delete(id);
+  else expandedIds.add(id);
+  renderDays();
+}
+window.toggleActivityDetails = toggleActivityDetails;
 
 function renderSummary() {
   const el = document.getElementById('attendeeSummary');

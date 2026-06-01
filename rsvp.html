@@ -36,7 +36,7 @@
       <aside class="panel" aria-label="Your summary">
         <h3 id="currentAttendeeName">…</h3>
         <p id="currentAttendeeMeta" class="family-status">…</p>
-        <p class="tiny" style="margin-top:var(--space-3)">Each event lists every attendee. The count on the card is how many people are marked Going.</p>
+        <p class="tiny" style="margin-top:var(--space-3)">Expand activity cards for full details before you RSVP. Counts show individuals marked Going.</p>
 
         <div class="toolbar" style="margin-top:var(--space-4)">
           <button class="secondary-btn" id="fillGroupDinnersBtn">All dinners — my family group</button>
@@ -47,10 +47,28 @@
       </aside>
 
       <section aria-label="Itinerary">
-        <div class="toolbar">
-          <button class="ghost-btn" id="showAllBtn">All events</button>
-          <button class="ghost-btn" id="showDinnersBtn">Dinners only</button>
-          <button class="ghost-btn" id="showActivitiesBtn">Activities only</button>
+        <div class="filter-panel">
+          <p class="filter-panel-label">View</p>
+          <div class="toolbar filter-toolbar" id="viewFilters" role="tablist" aria-label="Event view">
+            <button type="button" class="ghost-btn filter-btn is-active" data-view="all">All events</button>
+            <button type="button" class="ghost-btn filter-btn" data-view="dinners">Dinners only</button>
+            <button type="button" class="ghost-btn filter-btn" data-view="activities">Activities only</button>
+            <button type="button" class="ghost-btn filter-btn" data-view="kids">Great for kids</button>
+            <button type="button" class="ghost-btn filter-btn" data-view="easy">Easier options</button>
+          </div>
+
+          <p class="filter-panel-label">Activity filters</p>
+          <div class="toolbar filter-toolbar filter-toolbar--wrap" id="activityFacets" aria-label="Activity filters">
+            <button type="button" class="chip-filter" data-facet="kids-friendly">Kids friendly</button>
+            <button type="button" class="chip-filter" data-facet="grandparent-friendly">Grandparent friendly</button>
+            <button type="button" class="chip-filter" data-facet="indoor">Indoor</button>
+            <button type="button" class="chip-filter" data-facet="outdoor">Outdoor</button>
+            <button type="button" class="chip-filter" data-facet="reservation">Reservation needed</button>
+            <button type="button" class="chip-filter" data-facet="near-corolla">Near Corolla</button>
+            <button type="button" class="chip-filter" data-facet="near-kdh-nags">Kill Devil Hills / Nags Head</button>
+            <button type="button" class="chip-filter" data-facet="relaxed">Relaxed</button>
+            <button type="button" class="chip-filter" data-facet="high-activity">High activity</button>
+          </div>
         </div>
 
         <div class="days" id="daysContainer">
@@ -58,8 +76,7 @@
         </div>
 
         <p class="footer-note">
-          RSVPs are saved live. Share this page's URL to let others RSVP from any device.
-          Totals count individual attendees marked Going, not household headcount.
+          RSVPs are saved live. Activity cards include effort level and accessibility notes — open “More details” before you decide.
         </p>
       </section>
 
@@ -70,6 +87,7 @@
   <script src="js/config.js"></script>
   <script src="js/db.js"></script>
   <script src="js/utils.js"></script>
+  <script src="js/activity-enrichment.js"></script>
   <script src="js/rsvp.js"></script>
 </body>
 </html>
