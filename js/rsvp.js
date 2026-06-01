@@ -10,7 +10,7 @@ const expandedIds = new Set();
 let channel = null;
 
 const AE = () => window.ActivityEnrichment;
-const t = (key, vars) => (window.I18n ? I18n.t(key, vars) : key);
+const tr = (key, vars) => (window.I18n ? I18n.t(key, vars) : key);
 const cfg = () => window.ATTENDEE_CONFIG || { defaultMaxPartyAdult: 4, defaultMaxPartyChild: 1, absoluteMaxParty: 20 };
 
 function enrichAndLocalize(list) {
@@ -68,51 +68,59 @@ async function init() {
     ]);
     events = enrichAndLocalize(events);
   } catch (err) {
-    showDaysError(t('errorLoadTrip'), err.message);
-    showToast(t('errorLoadData') + ' ' + err.message, 'error');
+    showDaysError(tr('errorLoadTrip'), err.message);
+    showToast(tr('errorLoadData') + ' ' + err.message, 'error');
     return;
   }
 
-  const attendeeId = getAttendeeFromUrl();
-  if (attendeeId) {
-    currentAttendee = attendees.find(a => a.id === attendeeId) || null;
-    if (!currentAttendee) {
-      try {
-        currentAttendee = await db.getAttendee(attendeeId);
-        attendees.push(currentAttendee);
-      } catch {
-        window.location.href = 'index.html';
-        return;
+  try {
+    const attendeeId = getAttendeeFromUrl();
+    if (attendeeId) {
+      currentAttendee = attendees.find(a => a.id === attendeeId) || null;
+      if (!currentAttendee) {
+        try {
+          currentAttendee = await db.getAttendee(attendeeId);
+          attendees.push(currentAttendee);
+        } catch {
+          if (attendees.length > 0) currentAttendee = attendees[0];
+          else {
+            window.location.href = 'index.html';
+            return;
+          }
+        }
       }
+    } else if (attendees.length > 0) {
+      currentAttendee = attendees[0];
     }
-  } else if (attendees.length > 0) {
-    currentAttendee = attendees[0];
+
+    updateAttendeeHeader();
+    wireFilters();
+    renderDays();
+    renderSummary();
+
+    channel = db.subscribeToChanges(['attendee_rsvps', 'attendees', 'events'], async () => {
+      try {
+        [attendees, events, rsvps] = await Promise.all([
+          db.getAttendees(),
+          db.getEvents(),
+          db.getAllAttendeeRsvps()
+        ]);
+        events = enrichAndLocalize(events);
+        if (currentAttendee) {
+          currentAttendee = attendees.find(a => a.id === currentAttendee.id) || currentAttendee;
+        }
+        updateAttendeeHeader();
+        renderDays();
+        renderSummary();
+      } catch { /* silent */ }
+    });
+
+    document.getElementById('fillGroupDinnersBtn').addEventListener('click', confirmGroupDinners);
+    document.getElementById('copySummaryBtn').addEventListener('click', copySummary);
+  } catch (err) {
+    showDaysError(tr('errorLoadTrip'), err.message);
+    showToast(tr('errorLoadData') + ' ' + err.message, 'error');
   }
-
-  updateAttendeeHeader();
-  wireFilters();
-  renderDays();
-  renderSummary();
-
-  channel = db.subscribeToChanges(['attendee_rsvps', 'attendees', 'events'], async () => {
-    try {
-      [attendees, events, rsvps] = await Promise.all([
-        db.getAttendees(),
-        db.getEvents(),
-        db.getAllAttendeeRsvps()
-      ]);
-      events = enrichAndLocalize(events);
-      if (currentAttendee) {
-        currentAttendee = attendees.find(a => a.id === currentAttendee.id) || currentAttendee;
-      }
-      updateAttendeeHeader();
-      renderDays();
-      renderSummary();
-    } catch { /* silent */ }
-  });
-
-  document.getElementById('fillGroupDinnersBtn').addEventListener('click', confirmGroupDinners);
-  document.getElementById('copySummaryBtn').addEventListener('click', copySummary);
 }
 
 function onLanguageChanged() {
@@ -155,20 +163,20 @@ function updateAttendeeHeader() {
   const hintEl = document.getElementById('partyLimitHint');
 
   if (!currentAttendee) {
-    nameEl.textContent = t('rosterTitle');
-    metaEl.textContent = t('rosterMeta', { count: attendees.length });
-    navEl.textContent = t('navEveryone');
+    nameEl.textContent = tr('rosterTitle');
+    metaEl.textContent = tr('rosterMeta', { count: attendees.length });
+    navEl.textContent = tr('navEveryone');
     if (hintEl) hintEl.hidden = true;
     return;
   }
 
   const maxP = maxPartyFor(currentAttendee);
   nameEl.textContent = currentAttendee.full_name;
-  metaEl.textContent = `${currentAttendee.family_group} · ${currentAttendee.type === 'child' ? t('typeChild') : t('typeAdult')}`;
+  metaEl.textContent = `${currentAttendee.family_group} · ${currentAttendee.type === 'child' ? tr('typeChild') : tr('typeAdult')}`;
   navEl.textContent = currentAttendee.full_name;
   if (hintEl) {
     hintEl.hidden = false;
-    hintEl.textContent = t('partyMaxHint', { max: maxP });
+    hintEl.textContent = tr('partyMaxHint', { max: maxP });
   }
 }
 
@@ -191,7 +199,7 @@ function visibleEvents() {
 function groupAttendees(list) {
   const groups = new Map();
   list.forEach(a => {
-    const key = a.family_group || t('otherGroup');
+    const key = a.family_group || tr('otherGroup');
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(a);
   });
@@ -205,13 +213,13 @@ function showDaysError(title, detail) {
     <div class="empty-state">
       <p><strong>${escapeHtml(title)}</strong></p>
       ${detail ? `<p style="margin-top:8px;font-size:var(--text-sm);color:var(--color-text-muted)">${escapeHtml(detail)}</p>` : ''}
-      <p style="margin-top:var(--space-4)"><button type="button" class="primary-btn" onclick="location.reload()">${escapeHtml(t('btnRetry'))}</button></p>
+      <p style="margin-top:var(--space-4)"><button type="button" class="primary-btn" onclick="location.reload()">${escapeHtml(tr('btnRetry'))}</button></p>
     </div>
   `;
 }
 
 function linkLabelFor(ev) {
-  return /boil company/i.test(ev.restaurant || '') ? t('linkBoil') : t('linkVenue');
+  return /boil company/i.test(ev.restaurant || '') ? tr('linkBoil') : tr('linkVenue');
 }
 
 function indoorOutdoorLabel(value) {
@@ -221,7 +229,7 @@ function indoorOutdoorLabel(value) {
 function renderActivityBadges(ev) {
   const badges = AE() ? AE().activityBadges(ev) : [];
   if (!badges.length) return '';
-  return `<div class="activity-badges" aria-label="${escapeHtml(t('activityHighlights'))}">${badges.map(b =>
+  return `<div class="activity-badges" aria-label="${escapeHtml(tr('activityHighlights'))}">${badges.map(b =>
     `<span class="meta-badge meta-badge--${escapeHtml(b.key)}">${b.icon} ${escapeHtml((window.I18n ? I18n.badgeLabelI18n(b.key, b.label) : b.label))}</span>`
   ).join('')}</div>`;
 }
@@ -234,7 +242,7 @@ function renderExpandedActivityDetails(ev) {
     ['detailEffort', effort],
     ['detailIndoorOutdoor', indoorOutdoorLabel(ev.indoor_outdoor)],
     ['detailAccessibility', ev.accessibility],
-    ['detailReservation', ev.reservation_info || (ev.reserve ? t('reservationNeededShort') : '')],
+    ['detailReservation', ev.reservation_info || (ev.reserve ? tr('reservationNeededShort') : '')],
     ['detailFamilyFit', ev.family_fit]
   ].filter(([, val]) => val && String(val).trim());
 
@@ -250,7 +258,7 @@ function renderExpandedActivityDetails(ev) {
       `).join('')}
       ${ev.note ? `
         <div class="activity-detail-row">
-          <h6>${escapeHtml(t('detailTripNote'))}</h6>
+          <h6>${escapeHtml(tr('detailTripNote'))}</h6>
           <p>${escapeHtml(ev.note)}</p>
         </div>
       ` : ''}
@@ -263,14 +271,14 @@ function renderExtraGuestFields(attendeeId, eventId, rsvp, maxP) {
   const slots = rsvp.party_size - 1;
   const names = rsvp.extra_guest_names || [];
   let html = `<div class="extra-guest-fields" id="guests-${attendeeId}-${eventId}">`;
-  html += `<p class="tiny extra-guest-label">${escapeHtml(t('extraGuestLabel'))}</p>`;
+  html += `<p class="tiny extra-guest-label">${escapeHtml(tr('extraGuestLabel'))}</p>`;
   for (let i = 0; i < slots; i++) {
     const val = names[i] || '';
     html += `
       <div class="field field--compact">
-        <label for="guest-${attendeeId}-${eventId}-${i}">${escapeHtml(t('extraGuestName', { n: i + 1 }))}</label>
+        <label for="guest-${attendeeId}-${eventId}-${i}">${escapeHtml(tr('extraGuestName', { n: i + 1 }))}</label>
         <input type="text" id="guest-${attendeeId}-${eventId}-${i}" class="extra-guest-input"
-          value="${escapeHtml(val)}" placeholder="${escapeHtml(t('extraGuestPlaceholder'))}"
+          value="${escapeHtml(val)}" placeholder="${escapeHtml(tr('extraGuestPlaceholder'))}"
           onchange="updateGuestName('${attendeeId}', '${eventId}', ${i}, this.value)" />
       </div>
     `;
@@ -289,22 +297,22 @@ function renderPartyRsvpRow(attendee, eventId) {
     <div class="attendee-row attendee-row--party${highlight}">
       <div class="attendee-row-info">
         <span class="attendee-row-name">${escapeHtml(attendee.full_name)}</span>
-        <span class="type-pill type-pill--${attendee.type}">${attendee.type === 'child' ? t('typeChild') : t('typeAdult')}</span>
-        <span class="tiny party-cap">${escapeHtml(t('partyCapShort', { max: maxP }))}</span>
+        <span class="type-pill type-pill--${attendee.type}">${attendee.type === 'child' ? tr('typeChild') : tr('typeAdult')}</span>
+        <span class="tiny party-cap">${escapeHtml(tr('partyCapShort', { max: maxP }))}</span>
       </div>
       <div class="party-rsvp-stack">
         <div class="segmented segmented--compact">
           <button type="button"
             class="${rsvp.attending ? 'active-yes' : ''}"
             onclick="setAttending('${attendee.id}', '${eventId}', true)"
-            title="${escapeHtml(t('goingYes'))}" aria-label="${escapeHtml(t('goingYes'))}">✓</button>
+            title="${escapeHtml(tr('goingYes'))}" aria-label="${escapeHtml(tr('goingYes'))}">✓</button>
           <button type="button"
             class="${!rsvp.attending ? 'active-no' : ''}"
             onclick="setAttending('${attendee.id}', '${eventId}', false)"
-            title="${escapeHtml(t('goingNo'))}" aria-label="${escapeHtml(t('goingNo'))}">✕</button>
+            title="${escapeHtml(tr('goingNo'))}" aria-label="${escapeHtml(tr('goingNo'))}">✕</button>
         </div>
         <div class="party-size-field">
-          <label class="tiny" for="party-size-${attendee.id}-${eventId}">${escapeHtml(t('partySizeLabel'))}</label>
+          <label class="tiny" for="party-size-${attendee.id}-${eventId}">${escapeHtml(tr('partySizeLabel'))}</label>
           <input type="number" id="party-size-${attendee.id}-${eventId}" class="party-size-input"
             min="1" max="${maxP}" value="${rsvp.attending ? rsvp.party_size : 1}"
             ${sizeDisabled}
@@ -331,10 +339,10 @@ function renderWhosGoing(eventId) {
   const lines = goingPartySummaries(eventId);
   const goingChips = lines.length
     ? `<div class="going-families">${lines.map(n => `<span class="going-chip">${escapeHtml(n)}</span>`).join('')}</div>`
-    : `<p class="tiny" style="margin-top:4px">${escapeHtml(t('noConfirmations'))}</p>`;
+    : `<p class="tiny" style="margin-top:4px">${escapeHtml(tr('noConfirmations'))}</p>`;
   return `
     <div class="detail-item">
-      <h5>${escapeHtml(t('labelWhosGoing'))} <span style="font-weight:400;color:var(--color-text-muted)">(${total} ${total === 1 ? t('person') : t('people')})</span></h5>
+      <h5>${escapeHtml(tr('labelWhosGoing'))} <span style="font-weight:400;color:var(--color-text-muted)">(${total} ${total === 1 ? tr('person') : tr('people')})</span></h5>
       ${goingChips}
     </div>
   `;
@@ -356,7 +364,7 @@ function renderActivityCard(ev) {
         </div>
         <div class="row day-head-badges">
           ${renderActivityBadges(ev)}
-          <span class="count-pill" title="${escapeHtml(t('peopleConfirmed', { count }))}">${count}</span>
+          <span class="count-pill" title="${escapeHtml(tr('peopleConfirmed', { count }))}">${count}</span>
         </div>
       </div>
       <div class="day-body day-body--attendees">
@@ -367,7 +375,7 @@ function renderActivityCard(ev) {
           </div>
           <button type="button" class="details-toggle" aria-expanded="${expanded}" aria-controls="${detailsId}"
             onclick="toggleActivityDetails('${ev.id}')">
-            ${expanded ? t('hideDetails') : t('moreDetails')}
+            ${expanded ? tr('hideDetails') : tr('moreDetails')}
             <span class="details-toggle-chevron" aria-hidden="true">${expanded ? '▴' : '▾'}</span>
           </button>
           <div id="${detailsId}" class="activity-details ${expanded ? 'is-open' : ''}">
@@ -376,7 +384,7 @@ function renderActivityCard(ev) {
           ${renderWhosGoing(ev.id)}
         </div>
         <div class="attendee-rsvp-panel">
-          <h5 class="attendee-rsvp-heading">${escapeHtml(t('rsvpByParty'))}</h5>
+          <h5 class="attendee-rsvp-heading">${escapeHtml(tr('rsvpByParty'))}</h5>
           ${renderAttendeeRsvpRows(ev.id)}
         </div>
       </div>
@@ -387,7 +395,7 @@ function renderActivityCard(ev) {
 function renderDinnerCard(ev) {
   const count = eventPartyTotal(ev.id);
   const reserveClass = ev.reserve ? 'reserve' : 'noreserve';
-  const reserveLabel = ev.reserve ? t('reservationNeeded') : t('noReservation');
+  const reserveLabel = ev.reserve ? tr('reservationNeeded') : tr('noReservation');
 
   return `
     <article class="day-card" data-kind="dinner">
@@ -399,21 +407,21 @@ function renderDinnerCard(ev) {
         </div>
         <div class="row">
           <span class="badge ${reserveClass}">${reserveLabel}</span>
-          <span class="count-pill" title="${escapeHtml(t('peopleConfirmed', { count }))}">${count}</span>
+          <span class="count-pill" title="${escapeHtml(tr('peopleConfirmed', { count }))}">${count}</span>
         </div>
       </div>
       <div class="day-body day-body--attendees">
         <div class="detail-list">
           <div class="detail-item">
-            <h5>${escapeHtml(t('labelDescription'))}</h5>
+            <h5>${escapeHtml(tr('labelDescription'))}</h5>
             <p>${escapeHtml(ev.description)}</p>
           </div>
-          ${ev.note ? `<div class="detail-item"><h5>${escapeHtml(t('labelNote'))}</h5><p>${escapeHtml(ev.note)}</p></div>` : ''}
-          ${ev.link ? `<div class="detail-item"><h5>${escapeHtml(t('labelLink'))}</h5><p><a href="${escapeHtml(ev.link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(linkLabelFor(ev))}</a></p></div>` : ''}
+          ${ev.note ? `<div class="detail-item"><h5>${escapeHtml(tr('labelNote'))}</h5><p>${escapeHtml(ev.note)}</p></div>` : ''}
+          ${ev.link ? `<div class="detail-item"><h5>${escapeHtml(tr('labelLink'))}</h5><p><a href="${escapeHtml(ev.link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(linkLabelFor(ev))}</a></p></div>` : ''}
           ${renderWhosGoing(ev.id)}
         </div>
         <div class="attendee-rsvp-panel">
-          <h5 class="attendee-rsvp-heading">${escapeHtml(t('rsvpByParty'))}</h5>
+          <h5 class="attendee-rsvp-heading">${escapeHtml(tr('rsvpByParty'))}</h5>
           ${renderAttendeeRsvpRows(ev.id)}
         </div>
       </div>
@@ -426,7 +434,7 @@ function renderDays() {
   const visible   = visibleEvents();
 
   if (visible.length === 0) {
-    container.innerHTML = `<p class="empty-state">${escapeHtml(t('emptyNoEvents'))}</p>`;
+    container.innerHTML = `<p class="empty-state">${escapeHtml(tr('emptyNoEvents'))}</p>`;
     return;
   }
 
@@ -451,11 +459,11 @@ function renderSummary() {
     el.innerHTML = `
       <div class="summary-card">
         <strong>${attendees.length}</strong>
-        <span>${escapeHtml(t('summaryAttendeesListed', { count: attendees.length }))}</span>
+        <span>${escapeHtml(tr('summaryAttendeesListed', { count: attendees.length }))}</span>
       </div>
       <div class="summary-card">
         <strong>${totalPeople}</strong>
-        <span>${escapeHtml(t('summaryAllPartyTotal', { total: totalPeople }))}</span>
+        <span>${escapeHtml(tr('summaryAllPartyTotal', { total: totalPeople }))}</span>
       </div>
     `;
     return;
@@ -472,12 +480,12 @@ function renderSummary() {
       <span>${escapeHtml(currentAttendee.family_group)}</span>
     </div>
     <div class="summary-card">
-      <strong>${escapeHtml(t('summaryEventsGoing', { count: myRsvps.length }))}</strong>
-      <span>${escapeHtml(t('summaryDinnersActs', { dinners, acts }))}</span>
+      <strong>${escapeHtml(tr('summaryEventsGoing', { count: myRsvps.length }))}</strong>
+      <span>${escapeHtml(tr('summaryDinnersActs', { dinners, acts }))}</span>
     </div>
     <div class="summary-card">
-      <strong>${escapeHtml(t('summaryPeopleRepresented', { total: peopleTotal }))}</strong>
-      <span>${escapeHtml(t('summaryPeopleRepresentedHint'))}</span>
+      <strong>${escapeHtml(tr('summaryPeopleRepresented', { total: peopleTotal }))}</strong>
+      <span>${escapeHtml(tr('summaryPeopleRepresentedHint'))}</span>
     </div>
   `;
 }
@@ -516,7 +524,7 @@ async function persistRsvp(attendeeId, eventId, payload) {
   try {
     await db.upsertAttendeeRsvp(attendeeId, eventId, payload);
   } catch (err) {
-    showToast(t('toastSaveRsvpError') + ' ' + err.message, 'error');
+    showToast(tr('toastSaveRsvpError') + ' ' + err.message, 'error');
     try {
       attendees = await db.getAttendees();
       events = enrichAndLocalize(await db.getEvents());
@@ -581,7 +589,7 @@ window.updateGuestName = updateGuestName;
 
 async function confirmGroupDinners() {
   if (!currentAttendee) {
-    showToast(t('toastSelectName'), 'error');
+    showToast(tr('toastSelectName'), 'error');
     return;
   }
 
@@ -603,15 +611,15 @@ async function confirmGroupDinners() {
     await Promise.all(ops);
     renderDays();
     renderSummary();
-    showToast(t('toastDinnersSuccess', { group: currentAttendee.family_group }), 'success');
+    showToast(tr('toastDinnersSuccess', { group: currentAttendee.family_group }), 'success');
   } catch (err) {
-    showToast(t('toastDinnersError') + ' ' + err.message, 'error');
+    showToast(tr('toastDinnersError') + ' ' + err.message, 'error');
   }
 }
 
 async function copySummary() {
   if (!currentAttendee) {
-    showToast(t('toastCopySelectName'), 'error');
+    showToast(tr('toastCopySelectName'), 'error');
     return;
   }
 
@@ -622,7 +630,7 @@ async function copySummary() {
     const ev = events.find(e => e.id === r.event_id);
     if (!ev) return '';
     const guests = (r.extra_guest_names || []).filter(Boolean).join(', ');
-    const sizeNote = r.party_size > 1 ? ` (${r.party_size} ${t('people')}${guests ? ': ' + guests : ''})` : '';
+    const sizeNote = r.party_size > 1 ? ` (${r.party_size} ${tr('people')}${guests ? ': ' + guests : ''})` : '';
     return `${ev.date} – ${ev.title}${sizeNote}`;
   }).filter(Boolean);
 
@@ -633,9 +641,9 @@ async function copySummary() {
 
   try {
     await navigator.clipboard.writeText(text);
-    showToast(t('toastCopySuccess'), 'success');
+    showToast(tr('toastCopySuccess'), 'success');
   } catch {
-    showToast(t('toastCopyFail'), 'error');
+    showToast(tr('toastCopyFail'), 'error');
   }
 }
 
