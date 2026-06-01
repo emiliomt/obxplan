@@ -55,6 +55,6 @@ function initPageI18n(rerender) {
 
 function applyBuildStamp() {
   document.querySelectorAll('[data-build-stamp]').forEach(el => {
-    el.textContent = (window.APP_BUILD || '915cd56');
+    el.textContent = (window.APP_BUILD || 'd4b7016');
   });
 }
