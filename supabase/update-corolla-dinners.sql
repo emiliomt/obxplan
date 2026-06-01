@@ -1,14 +1,14 @@
 -- Run in Supabase SQL Editor to update existing events (keeps IDs and RSVPs).
 -- Safe to run multiple times.
 
--- July 5 — Uncle Ike's (Corolla)
+-- July 5 — La Dolce Vita (Corolla)
 update events set
-  title       = 'Arrival + Corolla group dinner',
+  title       = 'Arrival + first group dinner',
   area        = 'Corolla',
-  restaurant  = 'Uncle Ike''s Sandbar & Grill',
-  description = 'First-night dinner close to the house in Corolla — easy after travel and great for large family groups. Uncle Ike''s is family friendly, handles big parties well, and keeps the first evening low-stress with minimal driving.',
-  note        = 'Current working reservation target: 14 people. Dinners are kept close to Corolla unless the day''s activities already place the group farther south.',
-  link        = 'https://uncleikesobx.com/',
+  restaurant  = 'La Dolce Vita',
+  description = 'A relaxed first-night group dinner in Corolla with Italian food, pizza, pasta, and classic comfort dishes. This keeps the first evening close to the house and adds more cuisine variety to the trip.',
+  note        = 'Current working reservation target: 14 people. Chosen as a closer first-night option in Corolla with broader appeal beyond seafood.',
+  link        = 'https://www.ladolcevitacorolla.com/',
   reserve     = true
 where date = 'July 5' and event_type = 'dinner';
 

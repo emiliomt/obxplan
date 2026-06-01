@@ -24,18 +24,6 @@ create table if not exists events (
   note        text not null default '',
   link        text not null default '',
   sort_order  int  not null default 0,
-  short_description text not null default '',
-  full_description  text not null default '',
-  best_for          text not null default '',
-  effort_level      text not null default 'moderate',
-  indoor_outdoor    text not null default 'outdoor',
-  accessibility     text not null default '',
-  reservation_info  text not null default '',
-  family_fit        text not null default '',
-  area_tag          text not null default '',
-  kids_friendly         boolean not null default false,
-  grandparent_friendly  boolean not null default false,
-  activity_tags         text not null default '[]',
   created_at  timestamptz default now()
 );
 
@@ -79,11 +67,11 @@ create policy "rsvps_update" on rsvps for update using (true);
 insert into events
   (day, date, title, area, event_type, reserve, restaurant, description, note, link, sort_order)
 values
-  ('Day 1',  'July 5',    'Arrival + first group dinner',    'Kill Devil Hills',
-   'dinner',   true,  'Kill Devil Grill',
-   'Large casual dinner replacing Henry''s, which is closed.',
-   'Current working reservation target: 14 people.',
-   'https://www.killdevilgrillobx.com', 10),
+  ('Day 1',  'July 5',    'Arrival + first group dinner',    'Corolla',
+   'dinner',   true,  'La Dolce Vita',
+   'A relaxed first-night group dinner in Corolla with Italian food, pizza, pasta, and classic comfort dishes. This keeps the first evening close to the house and adds more cuisine variety to the trip.',
+   'Current working reservation target: 14 people. Chosen as a closer first-night option in Corolla with broader appeal beyond seafood.',
+   'https://www.ladolcevitacorolla.com/', 10),
 
   ('Day 2',  'July 6',    'Waterfront group dinner',         'Nags Head / soundside',
    'dinner',   false, 'Miller''s Waterfront Restaurant',

@@ -328,12 +328,12 @@ const translations = {
 /** Spanish copy for seeded / common events (matched on English source fields). */
 const EVENT_LOCALES = [
   {
-    match: ev => /arrival.*corolla|uncle ike/i.test(`${ev.title} ${ev.restaurant}`),
+    match: ev => /arrival.*first group|la dolce vita/i.test(`${ev.title} ${ev.restaurant}`),
     es: {
-      title: 'Llegada + cena grupal en Corolla',
+      title: 'Llegada + primera cena grupal',
       area: 'Corolla',
-      description: 'Cena de la primera noche cerca de la casa en Corolla — fácil después del viaje e ideal para grupos grandes. Uncle Ike\'s es familiar, maneja fiestas grandes y mantiene la noche sin estrés y con poco manejo.',
-      note: 'Meta de reservación: 14 personas. Las cenas se mantienen en Corolla salvo que las actividades del día nos lleven más al sur.'
+      description: 'Cena relajada de la primera noche en Corolla con comida italiana, pizza, pasta y platos clásicos reconfortantes. Mantiene la noche cerca de la casa y añade variedad más allá del marisco.',
+      note: 'Meta de reservación: 14 personas. Elegida como opción más cercana en Corolla con mayor atractivo más allá del marisco.'
     }
   },
   {
@@ -500,15 +500,6 @@ const EVENT_LOCALES = [
       accessibility: 'Pasarela accesible; subir dunas es arena irregular.',
       reservation_info: 'Sin reservación para entrar al parque.',
       family_fit: 'Genial para niños con energía; abuelos pueden preferir la pasarela.'
-    }
-  },
-  {
-    match: ev => /arrival.*first group|kill devil grill/i.test(`${ev.title} ${ev.restaurant}`),
-    es: {
-      title: 'Llegada + primera cena grupal',
-      area: 'Kill Devil Hills',
-      description: 'Cena casual grande en lugar de Henry\'s, que está cerrado.',
-      note: 'Meta de reservación: 14 personas.'
     }
   }
 ];
