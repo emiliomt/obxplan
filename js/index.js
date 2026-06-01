@@ -14,12 +14,24 @@ async function init() {
   document.getElementById('newAttendeeForm').addEventListener('submit', handleCreate);
 }
 
+function showMigrationNotice(detail) {
+  const list = document.getElementById('attendeeList');
+  list.innerHTML = `
+    <div class="migration-notice" role="alert">
+      <strong>Database still on family RSVPs</strong>
+      <p>Open Supabase → SQL Editor and run <code>supabase/migrate-to-attendees.sql</code>. That creates <code>attendees</code> and <code>attendee_rsvps</code>, expands each family headcount into individual rows, and copies existing RSVPs.</p>
+      ${detail ? `<p style="margin-top:var(--space-2);color:var(--color-text-muted)">${escapeHtml(detail)}</p>` : ''}
+    </div>
+  `;
+}
+
 async function loadAttendees() {
   try {
     attendees = await db.getAttendees();
     renderAttendees();
   } catch (err) {
-    showToast('Could not load attendees. Run supabase/migrate-to-attendees.sql in Supabase first.', 'error');
+    showMigrationNotice(err.message || String(err));
+    showToast('Run migrate-to-attendees.sql in Supabase for per-person RSVPs.', 'error');
   }
 }
 
