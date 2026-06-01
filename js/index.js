@@ -26,7 +26,7 @@ function showMigrationNotice(detail) {
   const list = document.getElementById('attendeeList');
   list.innerHTML = `
     <div class="migration-notice" role="alert">
-      <strong>${escapeHtml(I18n.t('migrationTitle'))}</strong>
+      <strong>${escapeHtml(I18n.t('migrationTitle'))}</strong><p style="margin-top:8px"><strong>Your database still has the families table only.</strong> Run these in Supabase SQL Editor, in order:</p><ol style="margin:8px 0 0 18px;line-height:1.6"><li><code>supabase/migrate-to-attendees.sql</code></li><li><code>supabase/party-size-rsvp.sql</code></li><li><code>supabase/add-activity-fields.sql</code> (optional)</li></ol>
       <p>${escapeHtml(I18n.t('migrationBody'))}</p>
       ${detail ? `<p style="margin-top:var(--space-2);color:var(--color-text-muted)">${escapeHtml(detail)}</p>` : ''}
     </div>
