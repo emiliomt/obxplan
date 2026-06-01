@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OBX Family Trip · RSVP</title>
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&f[]=cabinet-grotesk@500,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="shell">
+    <a href="#main" class="tiny" style="position:absolute;top:-40px;left:0">Skip to content</a>
+
+    <header class="topbar">
+      <a href="index.html" class="brand">
+        <div class="logo" aria-label="OBX logo">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M4 16c3-6 13-6 16 0"/>
+            <path d="M7 14c.8-3.5 3-7 5-10 2.2 3 4.2 6.4 5 10"/>
+            <circle cx="12" cy="16" r="1.5" fill="currentColor" stroke="none"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>OBX Family Itinerary</h1>
+          <p>July 5–11 · Corolla, North Carolina</p>
+        </div>
+      </a>
+      <div class="topbar-actions">
+        <a href="admin.html" class="page-link admin-link">Admin</a>
+        <button class="theme-toggle" data-theme-toggle aria-label="Switch theme">☾ Theme</button>
+      </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero" aria-label="Trip overview">
+      <article class="hero-card">
+        <h2>One page for the whole family plan.</h2>
+        <p>Choose your family below to confirm which dinners and activities you're joining. Headcounts update live for everyone.</p>
+        <div class="chips">
+          <span class="chip">Itinerary</span>
+          <span class="chip">Live RSVPs</span>
+          <span class="chip">Group dinners</span>
+          <span class="chip">Mobile friendly</span>
+        </div>
+      </article>
+      <aside class="hero-card stats">
+        <div class="stat">
+          <div class="stat-label">Trip dates</div>
+          <div class="stat-value">July 5–11</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Home base</div>
+          <div class="stat-value">Corolla</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Group dinners</div>
+          <div class="stat-value">5 tracked</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Activities</div>
+          <div class="stat-value">4 optional</div>
+        </div>
+      </aside>
+    </section>
+
+    <!-- Family picker -->
+    <main id="main">
+      <h2 class="section-header">Who are you?</h2>
+      <p style="color:var(--color-text-muted);font-size:var(--text-sm);margin-bottom:var(--space-5)">
+        Select your family to view the itinerary and RSVP to each event.
+      </p>
+
+      <div id="familyList">
+        <div class="loading-state"><div class="spinner"></div></div>
+      </div>
+
+      <div class="divider">or join as a new family</div>
+
+      <div class="new-family-box">
+        <h3>Add your family</h3>
+        <p>Not on the list yet? Enter your family name to create a spot.</p>
+        <form id="newFamilyForm">
+          <div class="new-family-row">
+            <div class="field" style="margin-bottom:0">
+              <label for="newFamilyName">Family name</label>
+              <input id="newFamilyName" type="text" placeholder="e.g. Smith family" required autocomplete="off" />
+            </div>
+            <div class="field" style="margin-bottom:0">
+              <label for="newFamilyCount">People</label>
+              <input id="newFamilyCount" type="number" min="1" max="50" value="2" />
+            </div>
+          </div>
+          <div style="margin-top:var(--space-4)">
+            <button id="createBtn" class="primary-btn" type="submit">Join trip →</button>
+          </div>
+        </form>
+      </div>
+    </main>
+
+    <p class="footer-note">
+      Powered by Supabase · Changes sync live across all devices.
+      <a href="admin.html" style="color:var(--color-primary);margin-left:var(--space-3)">Admin ↗</a>
+    </p>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/index.js"></script>
+</body>
+</html>
