@@ -26,14 +26,24 @@ async function init() {
   document.getElementById('familyCountInput').value = currentFamily.headcount;
 
   try {
-    [events, rsvps] = await Promise.all([db.getEvents(), db.getAllRsvps()]);
+    const [eventRows, rsvpRows] = await Promise.all([db.getEvents(), db.getAllRsvps()]);
+    events = eventRows ?? [];
+    rsvps  = rsvpRows ?? [];
   } catch (err) {
+    showDaysError('Could not load events. Check your connection and try again.', err.message);
     showToast('Failed to load data: ' + err.message, 'error');
     return;
   }
 
-  renderDays();
-  renderSummary();
+  try {
+    renderDays();
+    renderSummary();
+  } catch (err) {
+    console.error(err);
+    showDaysError('Could not display the itinerary.', err.message);
+    showToast('Display error: ' + err.message, 'error');
+    return;
+  }
 
   // Real-time: re-fetch on any rsvp or family change
   channel = db.subscribeToChanges(['rsvps', 'families'], async () => {
