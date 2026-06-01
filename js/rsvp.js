@@ -122,6 +122,9 @@ function renderDays() {
       ? `<div class="going-families">${going.map(n => `<span class="going-chip">${escapeHtml(n)}</span>`).join('')}</div>`
       : '<p style="font-size:var(--text-xs);color:var(--color-text-faint);margin-top:4px">No confirmations yet</p>';
 
+    const isCateredBoil = /boil company/i.test(ev.restaurant || '');
+    const linkLabel = isCateredBoil ? 'Book catering / boil' : 'Open venue / activity site';
+
     return `
       <article class="day-card" data-kind="${ev.event_type}">
         <div class="day-head">
@@ -147,7 +150,7 @@ function renderDays() {
             </div>
             <div class="detail-item">
               <h5>Link</h5>
-              <p><a href="${escapeHtml(ev.link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(linkLabel)}</a></p>
+              <p><a href="${escapeHtml(ev.link)}" target="_blank" rel="noopener noreferrer">Open venue / activity site</a></p>
             </div>
             <div class="detail-item">
               <h5>Who's going <span style="font-weight:400;color:var(--color-text-muted)">(${count} people)</span></h5>
