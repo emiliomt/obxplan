@@ -107,6 +107,34 @@ textarea { resize: vertical; }
 
 .topbar-actions { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
 
+.lang-switch {
+  display: inline-flex;
+  align-items: stretch;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.lang-btn {
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  background: transparent;
+  color: var(--color-text-muted);
+  border: none;
+  border-radius: 0;
+  transition: background var(--transition), color var(--transition);
+}
+.lang-btn + .lang-btn { border-left: 1px solid var(--color-border); }
+.lang-btn:hover { background: var(--color-surface-offset); color: var(--color-text); }
+.lang-btn.is-active {
+  background: var(--color-primary-highlight);
+  color: var(--color-primary);
+}
+.lang-btn:focus-visible { outline-offset: -2px; }
+
 /* ─── Buttons ───────────────────────────────────────────────────────────────── */
 .theme-toggle, .ghost-btn, .primary-btn, .secondary-btn, .danger-btn {
   min-height: 44px; border-radius: var(--radius-full);
@@ -343,31 +371,6 @@ textarea { resize: vertical; }
 .new-family-box p  { color: var(--color-text-muted); font-size: var(--text-sm); margin-bottom: var(--space-4); }
 .new-family-row { display: grid; grid-template-columns: 1fr 160px; gap: var(--space-3); align-items: end; }
 
-
-/* ─── Home: attendee picker ──────────────────────────────────────────────────── */
-.attendee-group { margin-bottom: var(--space-6); }
-.attendee-group-title {
-  font-family: var(--font-display);
-  font-size: var(--text-base);
-  color: var(--color-text-muted);
-  margin-bottom: var(--space-3);
-}
-.new-attendee-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr 120px;
-  gap: var(--space-3);
-  align-items: end;
-}
-.migration-notice {
-  padding: var(--space-5);
-  border-radius: var(--radius-lg);
-  background: color-mix(in oklab, var(--color-warning) 10%, var(--color-surface-2));
-  border: 1px solid color-mix(in oklab, var(--color-warning) 35%, var(--color-border));
-  font-size: var(--text-sm);
-  line-height: 1.55;
-}
-.migration-notice strong { display: block; margin-bottom: var(--space-2); }
-
 /* ─── Admin: auth overlay ────────────────────────────────────────────────────── */
 .auth-overlay {
   position: fixed; inset: 0; background: var(--color-bg);
@@ -436,199 +439,14 @@ textarea { resize: vertical; }
   color: var(--color-text-muted); font-size: var(--text-sm);
 }
 
-/* ─── Filters (RSVP itinerary) ───────────────────────────────────────────────── */
-.filter-panel {
-  margin-bottom: var(--space-5);
-  padding: var(--space-4) var(--space-5);
-  border-radius: var(--radius-xl);
-  background: color-mix(in oklab, var(--color-surface) 88%, transparent);
-  border: 1px solid color-mix(in oklab, var(--color-text) 8%, transparent);
-}
-.filter-panel-label {
-  font-size: var(--text-xs);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--color-text-muted);
-  margin-bottom: var(--space-2);
-}
-.filter-panel-label:not(:first-child) { margin-top: var(--space-4); }
-.filter-toolbar { margin-bottom: 0; }
-.filter-toolbar--wrap { gap: var(--space-2); }
-.filter-btn.is-active,
-.chip-filter.is-active {
-  background: var(--color-primary-highlight);
-  border-color: color-mix(in oklab, var(--color-primary) 35%, var(--color-border));
-  color: var(--color-primary);
-  font-weight: 700;
-}
-.chip-filter {
-  min-height: 36px;
-  padding: 0 var(--space-3);
-  border-radius: var(--radius-full);
-  font-size: var(--text-xs);
-  font-weight: 600;
-  background: var(--color-surface-2);
-  border: 1px solid var(--color-border);
-  color: var(--color-text-muted);
-  transition: all var(--transition);
-}
-.chip-filter:hover { background: var(--color-surface-offset); color: var(--color-text); }
-
-/* ─── Activity cards ─────────────────────────────────────────────────────────── */
-.day-card--activity .day-head { flex-wrap: wrap; }
-.day-head-badges { flex-wrap: wrap; justify-content: flex-end; }
-.activity-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-  justify-content: flex-end;
-  max-width: 280px;
-}
-.meta-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem 0.55rem;
-  border-radius: var(--radius-full);
-  font-size: var(--text-xs);
-  font-weight: 600;
-  background: var(--color-surface-2);
-  border: 1px solid var(--color-border);
-  color: var(--color-text-muted);
-  white-space: nowrap;
-}
-.meta-badge--reservation { color: var(--color-warning); border-color: color-mix(in oklab, var(--color-warning) 30%, var(--color-border)); }
-.meta-badge--outdoor { color: var(--color-primary); }
-.meta-badge--adventure { color: var(--color-error); }
-.meta-badge--accessible,
-.meta-badge--kids { color: var(--color-success); }
-
-.activity-short {
-  font-size: var(--text-base);
-  color: var(--color-text);
-  line-height: 1.5;
-}
-.activity-link { margin-top: var(--space-2); font-size: var(--text-sm); }
-.activity-link a { color: var(--color-primary); text-decoration: none; }
-.activity-link a:hover { text-decoration: underline; }
-.detail-item--lead { background: transparent; border: none; padding: 0; }
-
-.details-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin: var(--space-2) 0 var(--space-3);
-  padding: 0.5rem 0.85rem;
-  border-radius: var(--radius-full);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  background: var(--color-surface-2);
-  border: 1px solid var(--color-border);
-  color: var(--color-primary);
-  transition: background var(--transition), border-color var(--transition);
-}
-.details-toggle:hover { background: var(--color-primary-highlight); }
-.details-toggle-chevron { font-size: 0.65rem; opacity: 0.85; }
-
-.activity-details {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 280ms cubic-bezier(0.16, 1, 0.3, 1);
-  margin-bottom: var(--space-3);
-}
-.activity-details > .activity-details-grid {
-  overflow: hidden;
-  min-height: 0;
-}
-.activity-details.is-open { grid-template-rows: 1fr; }
-.activity-details-grid {
-  display: grid;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface-2);
-  border: 1px solid var(--color-border);
-}
-.activity-detail-row h6 {
-  font-size: var(--text-xs);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--color-text-muted);
-  margin-bottom: var(--space-1);
-}
-.activity-detail-row p {
-  font-size: var(--text-sm);
-  color: var(--color-text);
-  line-height: 1.5;
-}
-
-/* ─── Per-attendee RSVP panel ────────────────────────────────────────────────── */
-.day-body--attendees { grid-template-columns: 1fr minmax(280px, 360px); }
-.attendee-rsvp-panel {
-  padding: var(--space-4);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface-2);
-  border: 1px solid var(--color-border);
-  max-height: 420px;
-  overflow-y: auto;
-}
-.attendee-rsvp-heading {
-  font-size: var(--text-sm);
-  font-weight: 700;
-  margin-bottom: var(--space-3);
-}
-.attendee-group-block + .attendee-group-block { margin-top: var(--space-4); }
-.attendee-group-label {
-  font-size: var(--text-xs);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--color-text-muted);
-  margin-bottom: var(--space-2);
-}
-.attendee-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  padding: var(--space-2) 0;
-  border-bottom: 1px solid var(--color-divider);
-}
-.attendee-row:last-child { border-bottom: none; }
-.attendee-row--you {
-  background: color-mix(in oklab, var(--color-primary) 6%, transparent);
-  margin: 0 calc(-1 * var(--space-2));
-  padding-left: var(--space-2);
-  padding-right: var(--space-2);
-  border-radius: var(--radius-md);
-}
-.attendee-row-info { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
-.attendee-row-name { font-size: var(--text-sm); font-weight: 600; }
-.type-pill {
-  font-size: 0.65rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  padding: 0.15rem 0.45rem;
-  border-radius: var(--radius-full);
-  background: var(--color-surface-offset);
-  color: var(--color-text-muted);
-  flex-shrink: 0;
-}
-.type-pill--child { color: var(--color-primary); background: var(--color-primary-highlight); }
-.segmented--compact button { min-height: 36px; padding: 0 var(--space-3); font-size: var(--text-sm); }
-
 /* ─── Footer ─────────────────────────────────────────────────────────────────── */
 .footer-note { margin-top: var(--space-8); color: var(--color-text-muted); font-size: var(--text-sm); }
 
 /* ─── Responsive ─────────────────────────────────────────────────────────────── */
 @media (max-width: 980px) {
-  .hero, .layout, .day-body, .day-body--attendees { grid-template-columns: 1fr; }
+  .hero, .layout, .day-body { grid-template-columns: 1fr; }
   .panel { position: static; }
-  .new-family-row, .new-attendee-row { grid-template-columns: 1fr; }
-  .attendee-rsvp-panel { max-height: none; }
-  .activity-badges { max-width: none; justify-content: flex-start; }
+  .new-family-row { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 640px) {

@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>OBX Family Trip · RSVP</title>
   <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&f[]=cabinet-grotesk@500,700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=attendee2" />
+  <link rel="stylesheet" href="css/styles.css?v=i18n1" />
 </head>
-<body>
+<body data-page-title="pageTitleIndex">
   <div class="shell">
-    <a href="#main" class="tiny" style="position:absolute;top:-40px;left:0">Skip to content</a>
+    <a href="#main" class="tiny" style="position:absolute;top:-40px;left:0" data-i18n="skipToContent">Skip to content</a>
 
     <header class="topbar">
       <a href="index.html" class="brand">
@@ -21,51 +21,55 @@
           </svg>
         </div>
         <div class="brand-text">
-          <h1>OBX Family Itinerary</h1>
-          <p>July 5–11 · Corolla, North Carolina</p>
+          <h1 data-i18n="brandTitle">OBX Family Itinerary</h1>
+          <p data-i18n="brandDates">July 5–11 · Corolla, North Carolina</p>
         </div>
       </a>
       <div class="topbar-actions">
-        <a href="rsvp.html" class="page-link">Full itinerary →</a>
-        <a href="admin.html" class="page-link admin-link">Admin</a>
-        <button class="theme-toggle" data-theme-toggle aria-label="Switch theme">☾ Theme</button>
+        <a href="rsvp.html" class="page-link" data-i18n="navFullItinerary">Full itinerary →</a>
+        <a href="admin.html" class="page-link admin-link" data-i18n="navAdmin">Admin</a>
+        <div class="lang-switch" role="group" aria-label="Language">
+          <button type="button" class="lang-btn is-active" data-lang="en" aria-pressed="true">English</button>
+          <button type="button" class="lang-btn" data-lang="es" aria-pressed="false">Español</button>
+        </div>
+        <button class="theme-toggle" data-theme-toggle data-i18n="themeToggle" data-i18n-aria="themeAria" aria-label="Switch theme">☾ Theme</button>
       </div>
     </header>
 
     <section class="hero" aria-label="Trip overview">
       <article class="hero-card">
-        <h2>One page for the whole family plan.</h2>
-        <p>Select your name to see your summary, or open the full itinerary to RSVP for each person individually. Headcounts on event cards count people marked Going.</p>
+        <h2 data-i18n="heroTitle">One page for the whole family plan.</h2>
+        <p data-i18n="heroLead">Select your name to see your summary, or open the full itinerary to RSVP for each person individually. Headcounts on event cards count people marked Going.</p>
         <div class="chips">
-          <span class="chip">Per-person RSVPs</span>
-          <span class="chip">Live counts</span>
-          <span class="chip">Group dinners</span>
-          <span class="chip">Mobile friendly</span>
+          <span class="chip" data-i18n="chipPerPerson">Per-person RSVPs</span>
+          <span class="chip" data-i18n="chipLive">Live counts</span>
+          <span class="chip" data-i18n="chipDinners">Group dinners</span>
+          <span class="chip" data-i18n="chipMobile">Mobile friendly</span>
         </div>
       </article>
       <aside class="hero-card stats">
         <div class="stat">
-          <div class="stat-label">Trip dates</div>
+          <div class="stat-label" data-i18n="statTripDates">Trip dates</div>
           <div class="stat-value">July 5–11</div>
         </div>
         <div class="stat">
-          <div class="stat-label">Home base</div>
+          <div class="stat-label" data-i18n="statHomeBase">Home base</div>
           <div class="stat-value">Corolla</div>
         </div>
         <div class="stat">
-          <div class="stat-label">Group dinners</div>
-          <div class="stat-value">5 nights</div>
+          <div class="stat-label" data-i18n="statGroupDinners">Group dinners</div>
+          <div class="stat-value" data-i18n="statDinnersValue">5 nights</div>
         </div>
         <div class="stat">
-          <div class="stat-label">Activities</div>
-          <div class="stat-value">4 optional</div>
+          <div class="stat-label" data-i18n="statActivities">Activities</div>
+          <div class="stat-value" data-i18n="statActivitiesValue">4 optional</div>
         </div>
       </aside>
     </section>
 
     <main id="main">
-      <h2 class="section-header">Who are you?</h2>
-      <p style="color:var(--color-text-muted);font-size:var(--text-sm);margin-bottom:var(--space-5)">
+      <h2 class="section-header" data-i18n="sectionWho">Who are you?</h2>
+      <p style="color:var(--color-text-muted);font-size:var(--text-sm);margin-bottom:var(--space-5)" data-i18n="sectionWhoLead">
         Pick your name to highlight your row on the itinerary. You can still update RSVPs for everyone on the trip.
       </p>
 
@@ -73,46 +77,47 @@
         <div class="loading-state"><div class="spinner"></div></div>
       </div>
 
-      <div class="divider">or add yourself</div>
+      <div class="divider" data-i18n="dividerAddSelf">or add yourself</div>
 
       <div class="new-family-box">
-        <h3>Add an attendee</h3>
-        <p>Not on the list yet? Enter your details below.</p>
+        <h3 data-i18n="addAttendeeTitle">Add an attendee</h3>
+        <p data-i18n="addAttendeeLead">Not on the list yet? Enter your details below.</p>
         <form id="newAttendeeForm">
           <div class="new-attendee-row">
             <div class="field" style="margin-bottom:0">
-              <label for="newAttendeeName">Full name</label>
-              <input id="newAttendeeName" type="text" placeholder="e.g. Maria Montemayor" required autocomplete="name" />
+              <label for="newAttendeeName" data-i18n="labelFullName">Full name</label>
+              <input id="newAttendeeName" type="text" data-i18n-placeholder="placeholderName" placeholder="e.g. Maria Montemayor" required autocomplete="name" />
             </div>
             <div class="field" style="margin-bottom:0">
-              <label for="newAttendeeFamily">Family group</label>
-              <input id="newAttendeeFamily" type="text" placeholder="e.g. Montemayor Tatum" required autocomplete="off" />
+              <label for="newAttendeeFamily" data-i18n="labelFamilyGroup">Family group</label>
+              <input id="newAttendeeFamily" type="text" data-i18n-placeholder="placeholderFamily" placeholder="e.g. Montemayor Tatum" required autocomplete="off" />
             </div>
             <div class="field" style="margin-bottom:0">
-              <label for="newAttendeeType">Type</label>
+              <label for="newAttendeeType" data-i18n="labelType">Type</label>
               <select id="newAttendeeType">
-                <option value="adult">Adult</option>
-                <option value="child">Child</option>
+                <option value="adult" data-i18n-option="typeAdult">Adult</option>
+                <option value="child" data-i18n-option="typeChild">Child</option>
               </select>
             </div>
           </div>
           <div style="margin-top:var(--space-4)">
-            <button id="createBtn" class="primary-btn" type="submit">Join trip →</button>
+            <button id="createBtn" class="primary-btn" type="submit" data-i18n="btnJoinTrip">Join trip →</button>
           </div>
         </form>
       </div>
     </main>
 
     <p class="footer-note">
-      Powered by Supabase · Changes sync live across all devices.
-      <a href="admin.html" style="color:var(--color-primary);margin-left:var(--space-3)">Admin ↗</a>
+      <span data-i18n="footerIndex">Powered by Supabase · Changes sync live across all devices.</span>
+      <a href="admin.html" style="color:var(--color-primary);margin-left:var(--space-3)" data-i18n="navAdmin">Admin ↗</a>
     </p>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/config.js?v=attendee2"></script>
-  <script src="js/db.js?v=attendee2"></script>
-  <script src="js/utils.js?v=attendee2"></script>
-  <script src="js/index.js?v=attendee2"></script>
+  <script src="js/config.js?v=i18n1"></script>
+  <script src="js/i18n.js?v=i18n1"></script>
+  <script src="js/db.js?v=i18n1"></script>
+  <script src="js/utils.js?v=i18n1"></script>
+  <script src="js/index.js?v=i18n1"></script>
 </body>
 </html>

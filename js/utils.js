@@ -37,3 +37,15 @@ function getAttendeeFromUrl() {
   const params = new URLSearchParams(window.location.search);
   return params.get('attendee') || params.get('family');
 }
+
+function getFamilyFromUrl() {
+  return getAttendeeFromUrl();
+}
+
+function initPageI18n(rerender) {
+  if (!window.I18n) return;
+  I18n.initLanguageSwitcher();
+  if (typeof rerender === 'function') {
+    I18n.onLanguageChange(() => rerender());
+  }
+}

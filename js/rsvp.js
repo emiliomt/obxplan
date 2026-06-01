@@ -10,9 +10,19 @@ const expandedIds = new Set();
 let channel = null;
 
 const AE = () => window.ActivityEnrichment;
+const t = (key, vars) => (window.I18n ? I18n.t(key, vars) : key);
+
+function enrichAndLocalize(list) {
+  const mapped = list.map(ev =>
+    ev.event_type === 'activity' && AE() ? AE().enrichEvent({ ...ev }) : { ...ev }
+  );
+  return window.I18n ? I18n.localizeEvents(mapped) : mapped;
+}
+
 
 async function init() {
   initThemeToggle();
+  initPageI18n(onLanguageChanged);
 
   try {
     [attendees, events, rsvps] = await Promise.all([
@@ -20,12 +30,10 @@ async function init() {
       db.getEvents(),
       db.getAllAttendeeRsvps()
     ]);
-    events = events.map(ev =>
-      ev.event_type === 'activity' && AE() ? AE().enrichEvent(ev) : ev
-    );
+    events = enrichAndLocalize(events);
   } catch (err) {
-    showDaysError('Could not load trip data.', err.message);
-    showToast('Failed to load data: ' + err.message, 'error');
+    showDaysError(t('errorLoadTrip'), err.message);
+    showToast(t('errorLoadData') + ' ' + err.message, 'error');
     return;
   }
 
@@ -57,9 +65,7 @@ async function init() {
         db.getEvents(),
         db.getAllAttendeeRsvps()
       ]);
-      events = events.map(ev =>
-        ev.event_type === 'activity' && AE() ? AE().enrichEvent(ev) : ev
-      );
+      events = enrichAndLocalize(events);
       if (currentAttendee) {
         currentAttendee = attendees.find(a => a.id === currentAttendee.id) || currentAttendee;
       }
@@ -71,6 +77,17 @@ async function init() {
 
   document.getElementById('fillGroupDinnersBtn').addEventListener('click', confirmGroupDinners);
   document.getElementById('copySummaryBtn').addEventListener('click', copySummary);
+}
+
+function onLanguageChanged() {
+  events = enrichAndLocalize(events.map(ev => {
+    const base = { ...ev };
+    if (ev._en) Object.assign(base, ev._en);
+    return base;
+  }));
+  updateAttendeeHeader();
+  renderDays();
+  renderSummary();
 }
 
 function wireFilters() {
@@ -101,14 +118,14 @@ function updateAttendeeHeader() {
   const navEl  = document.getElementById('attendeeNavName');
 
   if (!currentAttendee) {
-    nameEl.textContent = 'Full trip roster';
-    metaEl.textContent = `${attendees.length} attendees`;
-    navEl.textContent = 'Everyone';
+    nameEl.textContent = t('rosterTitle');
+    metaEl.textContent = t('rosterMeta', { count: attendees.length });
+    navEl.textContent = t('navEveryone');
     return;
   }
 
   nameEl.textContent = currentAttendee.full_name;
-  metaEl.textContent = `${currentAttendee.family_group} · ${currentAttendee.type === 'child' ? 'Child' : 'Adult'}`;
+  metaEl.textContent = `${currentAttendee.family_group} · ${currentAttendee.type === 'child' ? t('typeChild') : t('typeAdult')}`;
   navEl.textContent = currentAttendee.full_name;
 }
 
@@ -146,7 +163,7 @@ function goingAttendeeNames(eventId) {
 function groupAttendees(list) {
   const groups = new Map();
   list.forEach(a => {
-    const key = a.family_group || 'Other';
+    const key = a.family_group || t('otherGroup');
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(a);
   });
@@ -160,56 +177,54 @@ function showDaysError(title, detail) {
     <div class="empty-state">
       <p><strong>${escapeHtml(title)}</strong></p>
       ${detail ? `<p style="margin-top:8px;font-size:var(--text-sm);color:var(--color-text-muted)">${escapeHtml(detail)}</p>` : ''}
-      <p style="margin-top:var(--space-4)"><button type="button" class="primary-btn" onclick="location.reload()">Retry</button></p>
+      <p style="margin-top:var(--space-4)"><button type="button" class="primary-btn" onclick="location.reload()">${escapeHtml(t('btnRetry'))}</button></p>
     </div>
   `;
 }
 
 function linkLabelFor(ev) {
   return /boil company/i.test(ev.restaurant || '')
-    ? 'Book catering / boil'
-    : 'Open venue / activity site';
+    ? t('linkBoil')
+    : t('linkVenue');
 }
 
 function indoorOutdoorLabel(value) {
-  if (value === 'both') return 'Indoor & outdoor';
-  if (value === 'indoor') return 'Indoor';
-  return 'Outdoor';
+  return window.I18n ? I18n.indoorOutdoorI18n(value) : value;
 }
 
 function renderActivityBadges(ev) {
   const badges = AE() ? AE().activityBadges(ev) : [];
   if (!badges.length) return '';
-  return `<div class="activity-badges" aria-label="Activity highlights">${badges.map(b =>
-    `<span class="meta-badge meta-badge--${escapeHtml(b.key)}">${b.icon} ${escapeHtml(b.label)}</span>`
+  return `<div class="activity-badges" aria-label="${escapeHtml(t('activityHighlights'))}">${badges.map(b =>
+    `<span class="meta-badge meta-badge--${escapeHtml(b.key)}">${b.icon} ${escapeHtml((window.I18n ? I18n.badgeLabelI18n(b.key, b.label) : b.label))}</span>`
   ).join('')}</div>`;
 }
 
 function renderExpandedActivityDetails(ev) {
-  const effort = AE() ? AE().effortLabel(ev.effort_level) : ev.effort_level;
+  const effort = window.I18n ? I18n.effortLabelI18n(ev.effort_level) : (AE() ? AE().effortLabel(ev.effort_level) : ev.effort_level);
   const rows = [
-    ['Full description', ev.full_description],
-    ['Best for', ev.best_for],
-    ['Effort level', effort],
-    ['Indoor / outdoor', indoorOutdoorLabel(ev.indoor_outdoor)],
-    ['Accessibility', ev.accessibility],
-    ['Reservation info', ev.reservation_info || (ev.reserve ? 'Reservation needed.' : '')],
-    ['Why this fits the trip', ev.family_fit]
+    ['detailFullDesc', ev.full_description],
+    ['detailBestFor', ev.best_for],
+    ['detailEffort', effort],
+    ['detailIndoorOutdoor', indoorOutdoorLabel(ev.indoor_outdoor)],
+    ['detailAccessibility', ev.accessibility],
+    ['detailReservation', ev.reservation_info || (ev.reserve ? t('reservationNeededShort') : '')],
+    ['detailFamilyFit', ev.family_fit]
   ].filter(([, val]) => val && String(val).trim());
 
   if (!rows.length) return '';
 
   return `
     <div class="activity-details-grid">
-      ${rows.map(([label, val]) => `
+      ${rows.map(([labelKey, val]) => `
         <div class="activity-detail-row">
-          <h6>${escapeHtml(label)}</h6>
+          <h6>${escapeHtml(typeof labelKey === 'string' && labelKey.startsWith('detail') ? t(labelKey) : labelKey)}</h6>
           <p>${escapeHtml(val)}</p>
         </div>
       `).join('')}
       ${ev.note ? `
         <div class="activity-detail-row">
-          <h6>Trip note</h6>
+          <h6>${escapeHtml(t('detailTripNote'))}</h6>
           <p>${escapeHtml(ev.note)}</p>
         </div>
       ` : ''}
@@ -229,15 +244,15 @@ function renderAttendeeRsvpRows(eventId) {
           <div class="attendee-row${highlight}">
             <div class="attendee-row-info">
               <span class="attendee-row-name">${escapeHtml(a.full_name)}</span>
-              <span class="type-pill type-pill--${a.type}">${a.type === 'child' ? 'Child' : 'Adult'}</span>
+              <span class="type-pill type-pill--${a.type}">${a.type === 'child' ? t('typeChild') : t('typeAdult')}</span>
             </div>
             <div class="segmented segmented--compact">
               <button type="button"
                 class="${answer === true ? 'active-yes' : ''}"
-                onclick="rsvpClick('${a.id}', '${eventId}', true)">✓</button>
+                onclick="rsvpClick('${a.id}', '${eventId}', true)" title="${escapeHtml(t('goingYes'))}" aria-label="${escapeHtml(t('goingYes'))}">✓</button>
               <button type="button"
                 class="${answer === false ? 'active-no' : ''}"
-                onclick="rsvpClick('${a.id}', '${eventId}', false)">✕</button>
+                onclick="rsvpClick('${a.id}', '${eventId}', false)" title="${escapeHtml(t('goingNo'))}" aria-label="${escapeHtml(t('goingNo'))}">✕</button>
             </div>
           </div>
         `;
@@ -249,10 +264,10 @@ function renderAttendeeRsvpRows(eventId) {
 function renderWhosGoing(count, going) {
   const goingChips = going.length
     ? `<div class="going-families">${going.map(n => `<span class="going-chip">${escapeHtml(n)}</span>`).join('')}</div>`
-    : '<p class="tiny" style="margin-top:4px">No confirmations yet</p>';
+    : `<p class="tiny" style="margin-top:4px">${escapeHtml(t('noConfirmations'))}</p>`;
   return `
     <div class="detail-item">
-      <h5>Who's going <span style="font-weight:400;color:var(--color-text-muted)">(${count} ${count === 1 ? 'person' : 'people'})</span></h5>
+      <h5>${escapeHtml(t('labelWhosGoing'))} <span style="font-weight:400;color:var(--color-text-muted)">(${count} ${count === 1 ? t('person') : t('people')})</span></h5>
       ${goingChips}
     </div>
   `;
@@ -275,7 +290,7 @@ function renderActivityCard(ev) {
         </div>
         <div class="row day-head-badges">
           ${renderActivityBadges(ev)}
-          <span class="count-pill" title="${count} people confirmed">${count}</span>
+          <span class="count-pill" title="${escapeHtml(t('peopleConfirmed', { count }))}">${count}</span>
         </div>
       </div>
       <div class="day-body day-body--attendees">
@@ -289,7 +304,7 @@ function renderActivityCard(ev) {
             aria-expanded="${expanded}"
             aria-controls="${detailsId}"
             onclick="toggleActivityDetails('${ev.id}')">
-            ${expanded ? 'Hide details' : 'More details'}
+            ${expanded ? t('hideDetails') : t('moreDetails')}
             <span class="details-toggle-chevron" aria-hidden="true">${expanded ? '▴' : '▾'}</span>
           </button>
           <div id="${detailsId}" class="activity-details ${expanded ? 'is-open' : ''}">
@@ -298,7 +313,7 @@ function renderActivityCard(ev) {
           ${renderWhosGoing(count, going)}
         </div>
         <div class="attendee-rsvp-panel">
-          <h5 class="attendee-rsvp-heading">RSVP by person</h5>
+          <h5 class="attendee-rsvp-heading">${escapeHtml(t('rsvpByPerson'))}</h5>
           ${renderAttendeeRsvpRows(ev.id)}
         </div>
       </div>
@@ -310,7 +325,7 @@ function renderDinnerCard(ev) {
   const count = eventGoingCount(ev.id);
   const going = goingAttendeeNames(ev.id);
   const reserveClass = ev.reserve ? 'reserve' : 'noreserve';
-  const reserveLabel = ev.reserve ? 'Reservation needed' : 'No reservation required';
+  const reserveLabel = ev.reserve ? t('reservationNeeded') : t('noReservation');
 
   return `
     <article class="day-card" data-kind="dinner">
@@ -322,24 +337,24 @@ function renderDinnerCard(ev) {
         </div>
         <div class="row">
           <span class="badge ${reserveClass}">${reserveLabel}</span>
-          <span class="count-pill" title="${count} people confirmed">${count}</span>
+          <span class="count-pill" title="${escapeHtml(t('peopleConfirmed', { count }))}">${count}</span>
         </div>
       </div>
       <div class="day-body day-body--attendees">
         <div class="detail-list">
           <div class="detail-item">
-            <h5>Description</h5>
+            <h5>${escapeHtml(t('labelDescription'))}</h5>
             <p>${escapeHtml(ev.description)}</p>
           </div>
           ${ev.note ? `
             <div class="detail-item">
-              <h5>Note</h5>
+              <h5>${escapeHtml(t('labelNote'))}</h5>
               <p>${escapeHtml(ev.note)}</p>
             </div>
           ` : ''}
           ${ev.link ? `
             <div class="detail-item">
-              <h5>Link</h5>
+              <h5>${escapeHtml(t('labelLink'))}</h5>
               <p><a href="${escapeHtml(ev.link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(linkLabelFor(ev))}</a></p>
             </div>
           ` : ''}
@@ -359,7 +374,7 @@ function renderDays() {
   const visible   = visibleEvents();
 
   if (visible.length === 0) {
-    container.innerHTML = '<p class="empty-state">No events match this view or filter. Try clearing activity filters or switching the view.</p>';
+    container.innerHTML = `<p class="empty-state">${escapeHtml(t('emptyNoEvents'))}</p>`;
     return;
   }
 
@@ -381,8 +396,8 @@ function renderSummary() {
     const totalGoing = rsvps.filter(r => r.going).length;
     el.innerHTML = `
       <div class="summary-card">
-        <strong>${attendees.length} attendees</strong>
-        <span>${totalGoing} total Going responses</span>
+        <strong>${attendees.length}</strong>
+        <span>${escapeHtml(t("summaryTotalGoing", { total: totalGoing }))}</span>
       </div>
     `;
     return;
@@ -399,12 +414,12 @@ function renderSummary() {
       <span>${escapeHtml(currentAttendee.family_group)}</span>
     </div>
     <div class="summary-card">
-      <strong>${myYes.length} event${myYes.length !== 1 ? 's' : ''} Going</strong>
-      <span>${dinners} dinner${dinners !== 1 ? 's' : ''} · ${acts} activit${acts !== 1 ? 'ies' : 'y'}</span>
+      <strong>${escapeHtml(t('summaryEventsGoing', { count: myYes.length }))}</strong>
+      <span>${escapeHtml(t('summaryDinnersActs', { dinners, acts }))}</span>
     </div>
     <div class="summary-card">
-      <strong>${groupSize} in your group</strong>
-      <span>Update each person on the event cards</span>
+      <strong>${escapeHtml(t('summaryInGroup', { count: groupSize }))}</strong>
+      <span>${escapeHtml(t('summaryUpdateHint'))}</span>
     </div>
   `;
 }
@@ -424,7 +439,7 @@ async function rsvpClick(attendeeId, eventId, going) {
   try {
     await db.upsertAttendeeRsvp(attendeeId, eventId, going);
   } catch (err) {
-    showToast('Could not save RSVP: ' + err.message, 'error');
+    showToast(t('toastSaveRsvpError') + ' ' + err.message, 'error');
     if (existing) existing.going = !going;
     else {
       const idx = rsvps.findIndex(r => r.attendee_id === attendeeId && r.event_id === eventId);
@@ -438,7 +453,7 @@ window.rsvpClick = rsvpClick;
 
 async function confirmGroupDinners() {
   if (!currentAttendee) {
-    showToast('Select your name on the home page first.', 'error');
+    showToast(t('toastSelectName'), 'error');
     return;
   }
 
@@ -465,15 +480,15 @@ async function confirmGroupDinners() {
     await Promise.all(ops);
     renderDays();
     renderSummary();
-    showToast(`Marked all dinners Going for ${currentAttendee.family_group}.`, 'success');
+    showToast(t('toastDinnersSuccess', { group: currentAttendee.family_group }), 'success');
   } catch (err) {
-    showToast('Could not update dinners: ' + err.message, 'error');
+    showToast(t('toastDinnersError') + ' ' + err.message, 'error');
   }
 }
 
 async function copySummary() {
   if (!currentAttendee) {
-    showToast('Select your name on the home page to copy a personal summary.', 'error');
+    showToast(t('toastCopySelectName'), 'error');
     return;
   }
 
@@ -490,9 +505,9 @@ async function copySummary() {
 
   try {
     await navigator.clipboard.writeText(text);
-    showToast('Summary copied to clipboard.', 'success');
+    showToast(t('toastCopySuccess'), 'success');
   } catch {
-    showToast('Clipboard copy failed in this browser.', 'error');
+    showToast(t('toastCopyFail'), 'error');
   }
 }
 

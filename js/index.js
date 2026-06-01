@@ -4,6 +4,8 @@ let attendees = [];
 
 async function init() {
   initThemeToggle();
+  initPageI18n(onLangChange);
+
   await loadAttendees();
 
   db.subscribeToChanges(['attendees'], async () => {
@@ -14,12 +16,18 @@ async function init() {
   document.getElementById('newAttendeeForm').addEventListener('submit', handleCreate);
 }
 
+function onLangChange() {
+  renderAttendees();
+  const btn = document.getElementById('createBtn');
+  if (btn && !btn.disabled) btn.textContent = I18n.t('btnJoinTrip');
+}
+
 function showMigrationNotice(detail) {
   const list = document.getElementById('attendeeList');
   list.innerHTML = `
     <div class="migration-notice" role="alert">
-      <strong>Database still on family RSVPs</strong>
-      <p>Open Supabase → SQL Editor and run <code>supabase/migrate-to-attendees.sql</code>. That creates <code>attendees</code> and <code>attendee_rsvps</code>, expands each family headcount into individual rows, and copies existing RSVPs.</p>
+      <strong>${escapeHtml(I18n.t('migrationTitle'))}</strong>
+      <p>${escapeHtml(I18n.t('migrationBody'))}</p>
       ${detail ? `<p style="margin-top:var(--space-2);color:var(--color-text-muted)">${escapeHtml(detail)}</p>` : ''}
     </div>
   `;
@@ -31,14 +39,14 @@ async function loadAttendees() {
     renderAttendees();
   } catch (err) {
     showMigrationNotice(err.message || String(err));
-    showToast('Run migrate-to-attendees.sql in Supabase for per-person RSVPs.', 'error');
+    showToast(I18n.t('toastMigrate'), 'error');
   }
 }
 
 function groupAttendees(list) {
   const groups = new Map();
   list.forEach(a => {
-    const key = a.family_group || 'Other';
+    const key = a.family_group || I18n.t('otherGroup');
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(a);
   });
@@ -49,7 +57,7 @@ function renderAttendees() {
   const list = document.getElementById('attendeeList');
 
   if (attendees.length === 0) {
-    list.innerHTML = '<p class="empty-state">No attendees yet — add yourself below after running the database migration.</p>';
+    list.innerHTML = `<p class="empty-state">${escapeHtml(I18n.t('emptyNoAttendees'))}</p>`;
     return;
   }
 
@@ -62,9 +70,9 @@ function renderAttendees() {
           <button class="family-option" type="button" onclick="selectAttendee('${a.id}')">
             <div>
               <div class="family-option-name">${escapeHtml(a.full_name)}</div>
-              <div class="family-option-meta">${a.type === 'child' ? 'Child' : 'Adult'}</div>
+              <div class="family-option-meta">${a.type === 'child' ? I18n.t('typeChild') : I18n.t('typeAdult')}</div>
             </div>
-            <span class="chip-sm">Select →</span>
+            <span class="chip-sm">${escapeHtml(I18n.t('btnSelect'))}</span>
           </button>
         `).join('')}
       </div>
@@ -90,15 +98,15 @@ async function handleCreate(e) {
   if (!fullName || !familyGroup) return;
 
   btn.disabled = true;
-  btn.textContent = 'Adding…';
+  btn.textContent = I18n.t('btnAdding');
 
   try {
     const attendee = await db.createAttendee(fullName, familyGroup, type);
     window.location.href = `rsvp.html?attendee=${encodeURIComponent(attendee.id)}`;
   } catch (err) {
-    showToast('Could not add attendee: ' + err.message, 'error');
+    showToast(I18n.t('toastAddAttendeeError') + ' ' + err.message, 'error');
     btn.disabled = false;
-    btn.textContent = 'Join trip →';
+    btn.textContent = I18n.t('btnJoinTrip');
   }
 }
 
