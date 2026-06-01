@@ -26,24 +26,14 @@ async function init() {
   document.getElementById('familyCountInput').value = currentFamily.headcount;
 
   try {
-    const [eventRows, rsvpRows] = await Promise.all([db.getEvents(), db.getAllRsvps()]);
-    events = eventRows ?? [];
-    rsvps  = rsvpRows ?? [];
+    [events, rsvps] = await Promise.all([db.getEvents(), db.getAllRsvps()]);
   } catch (err) {
-    showDaysError('Could not load events. Check your connection and try again.', err.message);
     showToast('Failed to load data: ' + err.message, 'error');
     return;
   }
 
-  try {
-    renderDays();
-    renderSummary();
-  } catch (err) {
-    console.error(err);
-    showDaysError('Could not display the itinerary.', err.message);
-    showToast('Display error: ' + err.message, 'error');
-    return;
-  }
+  renderDays();
+  renderSummary();
 
   // Real-time: re-fetch on any rsvp or family change
   channel = db.subscribeToChanges(['rsvps', 'families'], async () => {
@@ -86,9 +76,22 @@ function setFilter(f) {
 }
 
 function visibleEvents() {
-  if (filter === 'dinners')    return events.filter(e => e.event_type === 'dinner');
-  if (filter === 'activities') return events.filter(e => e.event_type === 'activity');
-  return events;
+  const list = events ?? [];
+  if (filter === 'dinners')    return list.filter(e => e.event_type === 'dinner');
+  if (filter === 'activities') return list.filter(e => e.event_type === 'activity');
+  return list;
+}
+
+function showDaysError(title, detail) {
+  const container = document.getElementById('daysContainer');
+  if (!container) return;
+  container.innerHTML = `
+    <div class="empty-state">
+      <p><strong>${escapeHtml(title)}</strong></p>
+      ${detail ? `<p style="margin-top:8px;font-size:var(--text-sm);color:var(--color-text-muted)">${escapeHtml(detail)}</p>` : ''}
+      <p style="margin-top:var(--space-4)"><button type="button" class="primary-btn" onclick="location.reload()">Retry</button></p>
+    </div>
+  `;
 }
 
 // Sum of headcounts for families that marked going=true for this event
@@ -132,6 +135,9 @@ function renderDays() {
       ? `<div class="going-families">${going.map(n => `<span class="going-chip">${escapeHtml(n)}</span>`).join('')}</div>`
       : '<p style="font-size:var(--text-xs);color:var(--color-text-faint);margin-top:4px">No confirmations yet</p>';
 
+    const isCateredBoil = /boil company/i.test(ev.restaurant || '');
+    const linkLabel = isCateredBoil ? 'Book catering / boil' : 'Open venue / activity site';
+
     return `
       <article class="day-card" data-kind="${ev.event_type}">
         <div class="day-head">
@@ -157,7 +163,7 @@ function renderDays() {
             </div>
             <div class="detail-item">
               <h5>Link</h5>
-              <p><a href="${escapeHtml(ev.link)}" target="_blank" rel="noopener noreferrer">Open venue / activity site</a></p>
+              <p><a href="${escapeHtml(ev.link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(linkLabel)}</a></p>
             </div>
             <div class="detail-item">
               <h5>Who's going <span style="font-weight:400;color:var(--color-text-muted)">(${count} people)</span></h5>
