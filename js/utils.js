@@ -25,6 +25,7 @@ function escapeHtml(str) {
 }
 
 function initThemeToggle() {
+  applyBuildStamp();
   const btn = document.querySelector('[data-theme-toggle]');
   if (!btn) return;
   btn.addEventListener('click', () => {
@@ -43,9 +44,17 @@ function getFamilyFromUrl() {
 }
 
 function initPageI18n(rerender) {
+  applyBuildStamp();
   if (!window.I18n) return;
   I18n.initLanguageSwitcher();
   if (typeof rerender === 'function') {
     I18n.onLanguageChange(() => rerender());
   }
+}
+
+
+function applyBuildStamp() {
+  document.querySelectorAll('[data-build-stamp]').forEach(el => {
+    el.textContent = (window.APP_BUILD || '277cbf2');
+  });
 }
