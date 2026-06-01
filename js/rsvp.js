@@ -122,6 +122,9 @@ function renderDays() {
       ? `<div class="going-families">${going.map(n => `<span class="going-chip">${escapeHtml(n)}</span>`).join('')}</div>`
       : '<p style="font-size:var(--text-xs);color:var(--color-text-faint);margin-top:4px">No confirmations yet</p>';
 
+    const isCateredBoil = /boil company/i.test(ev.restaurant || '');
+    const linkLabel = isCateredBoil ? 'Book catering / boil' : 'Open venue / activity site';
+
     return `
       <article class="day-card" data-kind="${ev.event_type}">
         <div class="day-head">
