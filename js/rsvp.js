@@ -1,73 +1,85 @@
-// RSVP page: live itinerary with Going / Not Going per event
+// RSVP page: per-attendee Going / Not Going for each event
 
-let currentFamily = null;
+let currentAttendee = null;
+let attendees = [];
 let events  = [];
 let rsvps   = [];
 let filter  = 'all';
 let channel = null;
 
-// ── Init ──────────────────────────────────────────────────────────────────────
-
 async function init() {
   initThemeToggle();
 
-  const familyId = getFamilyFromUrl();
-  if (!familyId) { window.location.href = 'index.html'; return; }
-
   try {
-    currentFamily = await db.getFamily(familyId);
-  } catch {
-    // Family not found or bad ID
-    window.location.href = 'index.html';
-    return;
-  }
-
-  updateFamilyHeader();
-  document.getElementById('familyCountInput').value = currentFamily.headcount;
-
-  try {
-    [events, rsvps] = await Promise.all([db.getEvents(), db.getAllRsvps()]);
+    [attendees, events, rsvps] = await Promise.all([
+      db.getAttendees(),
+      db.getEvents(),
+      db.getAllAttendeeRsvps()
+    ]);
   } catch (err) {
+    showDaysError('Could not load trip data.', err.message);
     showToast('Failed to load data: ' + err.message, 'error');
     return;
   }
 
+  const attendeeId = getAttendeeFromUrl();
+  if (attendeeId) {
+    currentAttendee = attendees.find(a => a.id === attendeeId) || null;
+    if (!currentAttendee) {
+      try {
+        currentAttendee = await db.getAttendee(attendeeId);
+        attendees.push(currentAttendee);
+      } catch {
+        window.location.href = 'index.html';
+        return;
+      }
+    }
+  } else if (attendees.length > 0) {
+    currentAttendee = attendees[0];
+  }
+
+  updateAttendeeHeader();
   renderDays();
   renderSummary();
 
-  // Real-time: re-fetch on any rsvp or family change
-  channel = db.subscribeToChanges(['rsvps', 'families'], async () => {
+  channel = db.subscribeToChanges(['attendee_rsvps', 'attendees', 'events'], async () => {
     try {
-      [rsvps, events] = await Promise.all([db.getAllRsvps(), db.getEvents()]);
-      // Refresh family headcount in case admin changed it
-      currentFamily = await db.getFamily(currentFamily.id);
-      document.getElementById('familyCountInput').value = currentFamily.headcount;
-      updateFamilyHeader();
+      [attendees, events, rsvps] = await Promise.all([
+        db.getAttendees(),
+        db.getEvents(),
+        db.getAllAttendeeRsvps()
+      ]);
+      if (currentAttendee) {
+        currentAttendee = attendees.find(a => a.id === currentAttendee.id) || currentAttendee;
+      }
+      updateAttendeeHeader();
       renderDays();
       renderSummary();
-    } catch { /* silent — next change will retry */ }
+    } catch { /* silent */ }
   });
 
-  // Filter buttons
   document.getElementById('showAllBtn').addEventListener('click', () => setFilter('all'));
   document.getElementById('showDinnersBtn').addEventListener('click', () => setFilter('dinners'));
   document.getElementById('showActivitiesBtn').addEventListener('click', () => setFilter('activities'));
-
-  // Headcount save
-  document.getElementById('applyCountBtn').addEventListener('click', applyCount);
-
-  // Confirm all dinners
-  document.getElementById('fillAllYesBtn').addEventListener('click', confirmAllDinners);
-
-  // Copy summary
+  document.getElementById('fillGroupDinnersBtn').addEventListener('click', confirmGroupDinners);
   document.getElementById('copySummaryBtn').addEventListener('click', copySummary);
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+function updateAttendeeHeader() {
+  const nameEl = document.getElementById('currentAttendeeName');
+  const metaEl = document.getElementById('currentAttendeeMeta');
+  const navEl  = document.getElementById('attendeeNavName');
 
-function updateFamilyHeader() {
-  document.getElementById('currentFamilyName').textContent = currentFamily.name;
-  document.getElementById('familyNavName').textContent     = currentFamily.name;
+  if (!currentAttendee) {
+    nameEl.textContent = 'Full trip roster';
+    metaEl.textContent = `${attendees.length} attendees`;
+    navEl.textContent = 'Everyone';
+    return;
+  }
+
+  nameEl.textContent = currentAttendee.full_name;
+  metaEl.textContent = `${currentAttendee.family_group} · ${currentAttendee.type === 'child' ? 'Child' : 'Adult'}`;
+  navEl.textContent = currentAttendee.full_name;
 }
 
 function setFilter(f) {
@@ -76,31 +88,83 @@ function setFilter(f) {
 }
 
 function visibleEvents() {
-  if (filter === 'dinners')    return events.filter(e => e.event_type === 'dinner');
-  if (filter === 'activities') return events.filter(e => e.event_type === 'activity');
-  return events;
+  const list = events ?? [];
+  if (filter === 'dinners')    return list.filter(e => e.event_type === 'dinner');
+  if (filter === 'activities') return list.filter(e => e.event_type === 'activity');
+  return list;
 }
 
-// Sum of headcounts for families that marked going=true for this event
-function eventHeadcount(eventId) {
+function attendeeRsvp(attendeeId, eventId) {
+  const r = rsvps.find(x => x.attendee_id === attendeeId && x.event_id === eventId);
+  return r ? r.going : null;
+}
+
+function eventGoingCount(eventId) {
+  return rsvps.filter(r => r.event_id === eventId && r.going).length;
+}
+
+function goingAttendeeNames(eventId) {
   return rsvps
-    .filter(r => r.event_id === eventId && r.going && r.families)
-    .reduce((sum, r) => sum + (r.families.headcount || 0), 0);
+    .filter(r => r.event_id === eventId && r.going && r.attendees)
+    .map(r => r.attendees.full_name);
 }
 
-// Names of families going (excluding current family — shown separately)
-function goingFamilies(eventId) {
-  return rsvps
-    .filter(r => r.event_id === eventId && r.going && r.families)
-    .map(r => r.families.name);
+function groupAttendees(list) {
+  const groups = new Map();
+  list.forEach(a => {
+    const key = a.family_group || 'Other';
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(a);
+  });
+  return [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]));
 }
 
-function myRsvp(eventId) {
-  const r = rsvps.find(r => r.event_id === eventId && r.family_id === currentFamily.id);
-  return r ? r.going : null; // null = not yet answered
+function showDaysError(title, detail) {
+  const container = document.getElementById('daysContainer');
+  if (!container) return;
+  container.innerHTML = `
+    <div class="empty-state">
+      <p><strong>${escapeHtml(title)}</strong></p>
+      ${detail ? `<p style="margin-top:8px;font-size:var(--text-sm);color:var(--color-text-muted)">${escapeHtml(detail)}</p>` : ''}
+      <p style="margin-top:var(--space-4)"><button type="button" class="primary-btn" onclick="location.reload()">Retry</button></p>
+    </div>
+  `;
 }
 
-// ── Render ────────────────────────────────────────────────────────────────────
+function linkLabelFor(ev) {
+  return /boil company/i.test(ev.restaurant || '')
+    ? 'Book catering / boil'
+    : 'Open venue / activity site';
+}
+
+function renderAttendeeRsvpRows(eventId) {
+  const grouped = groupAttendees(attendees);
+  return grouped.map(([familyGroup, members]) => `
+    <div class="attendee-group-block">
+      <div class="attendee-group-label">${escapeHtml(familyGroup)}</div>
+      ${members.map(a => {
+        const answer = attendeeRsvp(a.id, eventId);
+        const highlight = currentAttendee && a.id === currentAttendee.id ? ' attendee-row--you' : '';
+        return `
+          <div class="attendee-row${highlight}">
+            <div class="attendee-row-info">
+              <span class="attendee-row-name">${escapeHtml(a.full_name)}</span>
+              <span class="type-pill type-pill--${a.type}">${a.type === 'child' ? 'Child' : 'Adult'}</span>
+            </div>
+            <div class="segmented segmented--compact">
+              <button type="button"
+                class="${answer === true ? 'active-yes' : ''}"
+                onclick="rsvpClick('${a.id}', '${eventId}', true)">✓</button>
+              <button type="button"
+                class="${answer === false ? 'active-no' : ''}"
+                onclick="rsvpClick('${a.id}', '${eventId}', false)">✕</button>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `).join('');
+}
 
 function renderDays() {
   const container = document.getElementById('daysContainer');
@@ -112,18 +176,14 @@ function renderDays() {
   }
 
   container.innerHTML = visible.map(ev => {
-    const count    = eventHeadcount(ev.id);
-    const going    = goingFamilies(ev.id);
-    const myAnswer = myRsvp(ev.id);
+    const count = eventGoingCount(ev.id);
+    const going = goingAttendeeNames(ev.id);
     const reserveClass = ev.reserve ? 'reserve' : 'noreserve';
     const reserveLabel = ev.reserve ? 'Reservation needed' : 'No reservation required';
 
     const goingChips = going.length
       ? `<div class="going-families">${going.map(n => `<span class="going-chip">${escapeHtml(n)}</span>`).join('')}</div>`
       : '<p style="font-size:var(--text-xs);color:var(--color-text-faint);margin-top:4px">No confirmations yet</p>';
-
-    const isCateredBoil = /boil company/i.test(ev.restaurant || '');
-    const linkLabel = isCateredBoil ? 'Book catering / boil' : 'Open venue / activity site';
 
     return `
       <article class="day-card" data-kind="${ev.event_type}">
@@ -138,7 +198,7 @@ function renderDays() {
             <span class="count-pill" title="${count} people confirmed">${count}</span>
           </div>
         </div>
-        <div class="day-body">
+        <div class="day-body day-body--attendees">
           <div class="detail-list">
             <div class="detail-item">
               <h5>Description</h5>
@@ -150,28 +210,16 @@ function renderDays() {
             </div>
             <div class="detail-item">
               <h5>Link</h5>
-              <p><a href="${escapeHtml(ev.link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(linkLabel)}</a></p>
+              <p><a href="${escapeHtml(ev.link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(linkLabelFor(ev))}</a></p>
             </div>
             <div class="detail-item">
-              <h5>Who's going <span style="font-weight:400;color:var(--color-text-muted)">(${count} people)</span></h5>
+              <h5>Who's going <span style="font-weight:400;color:var(--color-text-muted)">(${count} ${count === 1 ? 'person' : 'people'})</span></h5>
               ${goingChips}
             </div>
           </div>
-          <div class="family-card">
-            <div>
-              <div class="tiny">Your family</div>
-              <h5>${escapeHtml(currentFamily.name)}</h5>
-              <p class="family-status">${currentFamily.headcount} ${currentFamily.headcount === 1 ? 'person' : 'people'}</p>
-            </div>
-            <div class="segmented">
-              <button type="button"
-                class="${myAnswer === true ? 'active-yes' : ''}"
-                onclick="rsvpClick('${ev.id}', true)">✓ Going</button>
-              <button type="button"
-                class="${myAnswer === false ? 'active-no' : ''}"
-                onclick="rsvpClick('${ev.id}', false)">✕ Not going</button>
-            </div>
-            <p class="tiny">Only updates your family's RSVP.</p>
+          <div class="attendee-rsvp-panel">
+            <h5 class="attendee-rsvp-heading">RSVP by person</h5>
+            ${renderAttendeeRsvpRows(ev.id)}
           </div>
         </div>
       </article>
@@ -180,91 +228,115 @@ function renderDays() {
 }
 
 function renderSummary() {
-  const myYes   = rsvps.filter(r => r.family_id === currentFamily.id && r.going);
+  const el = document.getElementById('attendeeSummary');
+  if (!currentAttendee) {
+    const totalGoing = rsvps.filter(r => r.going).length;
+    el.innerHTML = `
+      <div class="summary-card">
+        <strong>${attendees.length} attendees</strong>
+        <span>${totalGoing} total Going responses</span>
+      </div>
+    `;
+    return;
+  }
+
+  const myYes = rsvps.filter(r => r.attendee_id === currentAttendee.id && r.going);
   const dinners = myYes.filter(r => events.find(e => e.id === r.event_id && e.event_type === 'dinner')).length;
   const acts    = myYes.filter(r => events.find(e => e.id === r.event_id && e.event_type === 'activity')).length;
+  const groupSize = attendees.filter(a => a.family_group === currentAttendee.family_group).length;
 
-  document.getElementById('familySummary').innerHTML = `
+  el.innerHTML = `
     <div class="summary-card">
-      <strong>${escapeHtml(currentFamily.name)}</strong>
-      <span>${currentFamily.headcount} ${currentFamily.headcount === 1 ? 'person' : 'people'}</span>
+      <strong>${escapeHtml(currentAttendee.full_name)}</strong>
+      <span>${escapeHtml(currentAttendee.family_group)}</span>
     </div>
     <div class="summary-card">
-      <strong>${myYes.length} confirmation${myYes.length !== 1 ? 's' : ''}</strong>
+      <strong>${myYes.length} event${myYes.length !== 1 ? 's' : ''} Going</strong>
       <span>${dinners} dinner${dinners !== 1 ? 's' : ''} · ${acts} activit${acts !== 1 ? 'ies' : 'y'}</span>
+    </div>
+    <div class="summary-card">
+      <strong>${groupSize} in your group</strong>
+      <span>Update each person on the event cards</span>
     </div>
   `;
 }
 
-// ── Actions ───────────────────────────────────────────────────────────────────
+async function rsvpClick(attendeeId, eventId, going) {
+  const existing = rsvps.find(r => r.attendee_id === attendeeId && r.event_id === eventId);
+  const attendee = attendees.find(a => a.id === attendeeId);
 
-async function rsvpClick(eventId, going) {
-  // Optimistic UI: update local state immediately
-  const existing = rsvps.find(r => r.event_id === eventId && r.family_id === currentFamily.id);
-  if (existing) {
-    existing.going = going;
-  } else {
-    rsvps.push({ event_id: eventId, family_id: currentFamily.id, going, families: { ...currentFamily } });
+  if (existing) existing.going = going;
+  else if (attendee) {
+    rsvps.push({ attendee_id: attendeeId, event_id: eventId, going, attendees: { ...attendee } });
   }
+
   renderDays();
   renderSummary();
 
   try {
-    await db.upsertRsvp(currentFamily.id, eventId, going);
+    await db.upsertAttendeeRsvp(attendeeId, eventId, going);
   } catch (err) {
     showToast('Could not save RSVP: ' + err.message, 'error');
-    // Revert on failure
-    const idx = rsvps.findIndex(r => r.event_id === eventId && r.family_id === currentFamily.id);
-    if (idx !== -1) rsvps[idx].going = !going;
+    if (existing) existing.going = !going;
+    else {
+      const idx = rsvps.findIndex(r => r.attendee_id === attendeeId && r.event_id === eventId);
+      if (idx !== -1) rsvps.splice(idx, 1);
+    }
     renderDays();
     renderSummary();
   }
 }
 window.rsvpClick = rsvpClick;
 
-async function applyCount() {
-  const val = Math.max(0, parseInt(document.getElementById('familyCountInput').value, 10) || 0);
-  try {
-    await db.updateFamilyHeadcount(currentFamily.id, val);
-    currentFamily.headcount = val;
-    updateFamilyHeader();
-    // Also update any cached rsvp rows so headcount pills update before next subscription refresh
-    rsvps.forEach(r => { if (r.families && r.family_id === currentFamily.id) r.families.headcount = val; });
-    renderDays();
-    renderSummary();
-    showToast(`${currentFamily.name} updated to ${val} people.`, 'success');
-  } catch (err) {
-    showToast('Could not update headcount: ' + err.message, 'error');
+async function confirmGroupDinners() {
+  if (!currentAttendee) {
+    showToast('Select your name on the home page first.', 'error');
+    return;
   }
-}
 
-async function confirmAllDinners() {
+  const group = attendees.filter(a => a.family_group === currentAttendee.family_group);
   const dinnerIds = events.filter(e => e.event_type === 'dinner').map(e => e.id);
+
   try {
-    await Promise.all(dinnerIds.map(id => db.upsertRsvp(currentFamily.id, id, true)));
-    // Update local state
-    dinnerIds.forEach(id => {
-      const existing = rsvps.find(r => r.event_id === id && r.family_id === currentFamily.id);
-      if (existing) { existing.going = true; }
-      else { rsvps.push({ event_id: id, family_id: currentFamily.id, going: true, families: { ...currentFamily } }); }
-    });
+    const ops = [];
+    for (const person of group) {
+      for (const eventId of dinnerIds) {
+        ops.push(db.upsertAttendeeRsvp(person.id, eventId, true));
+        const existing = rsvps.find(r => r.attendee_id === person.id && r.event_id === eventId);
+        if (existing) existing.going = true;
+        else {
+          rsvps.push({
+            attendee_id: person.id,
+            event_id: eventId,
+            going: true,
+            attendees: { ...person }
+          });
+        }
+      }
+    }
+    await Promise.all(ops);
     renderDays();
     renderSummary();
-    showToast(`${currentFamily.name} confirmed for all dinners.`, 'success');
+    showToast(`Marked all dinners Going for ${currentAttendee.family_group}.`, 'success');
   } catch (err) {
-    showToast('Could not confirm all dinners: ' + err.message, 'error');
+    showToast('Could not update dinners: ' + err.message, 'error');
   }
 }
 
 async function copySummary() {
+  if (!currentAttendee) {
+    showToast('Select your name on the home page to copy a personal summary.', 'error');
+    return;
+  }
+
   const myYes = rsvps
-    .filter(r => r.family_id === currentFamily.id && r.going)
+    .filter(r => r.attendee_id === currentAttendee.id && r.going)
     .map(r => events.find(e => e.id === r.event_id))
     .filter(Boolean)
     .sort((a, b) => a.sort_order - b.sort_order);
 
   const text = [
-    `${currentFamily.name} · ${currentFamily.headcount} people`,
+    `${currentAttendee.full_name} (${currentAttendee.family_group})`,
     ...myYes.map(ev => `${ev.date} – ${ev.title} (${ev.restaurant})`)
   ].join('\n');
 

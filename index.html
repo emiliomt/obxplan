@@ -26,19 +26,19 @@
         </div>
       </a>
       <div class="topbar-actions">
+        <a href="rsvp.html" class="page-link">Full itinerary →</a>
         <a href="admin.html" class="page-link admin-link">Admin</a>
         <button class="theme-toggle" data-theme-toggle aria-label="Switch theme">☾ Theme</button>
       </div>
     </header>
 
-    <!-- Hero -->
     <section class="hero" aria-label="Trip overview">
       <article class="hero-card">
         <h2>One page for the whole family plan.</h2>
-        <p>Choose your family below to confirm which dinners and activities you're joining. Headcounts update live for everyone. Home base is <strong>Corolla</strong> — dinners stay close unless that day's activities already take the group farther south.</p>
+        <p>Select your name to see your summary, or open the full itinerary to RSVP for each person individually. Headcounts on event cards count people marked Going.</p>
         <div class="chips">
-          <span class="chip">Corolla home base</span>
-          <span class="chip">Live RSVPs</span>
+          <span class="chip">Per-person RSVPs</span>
+          <span class="chip">Live counts</span>
           <span class="chip">Group dinners</span>
           <span class="chip">Mobile friendly</span>
         </div>
@@ -54,7 +54,7 @@
         </div>
         <div class="stat">
           <div class="stat-label">Group dinners</div>
-          <div class="stat-value">5 tracked</div>
+          <div class="stat-value">5 nights</div>
         </div>
         <div class="stat">
           <div class="stat-label">Activities</div>
@@ -63,31 +63,37 @@
       </aside>
     </section>
 
-    <!-- Family picker -->
     <main id="main">
       <h2 class="section-header">Who are you?</h2>
       <p style="color:var(--color-text-muted);font-size:var(--text-sm);margin-bottom:var(--space-5)">
-        Select your family to view the itinerary and RSVP to each event.
+        Pick your name to highlight your row on the itinerary. You can still update RSVPs for everyone on the trip.
       </p>
 
-      <div id="familyList">
+      <div id="attendeeList">
         <div class="loading-state"><div class="spinner"></div></div>
       </div>
 
-      <div class="divider">or join as a new family</div>
+      <div class="divider">or add yourself</div>
 
       <div class="new-family-box">
-        <h3>Add your family</h3>
-        <p>Not on the list yet? Enter your family name to create a spot.</p>
-        <form id="newFamilyForm">
-          <div class="new-family-row">
+        <h3>Add an attendee</h3>
+        <p>Not on the list yet? Enter your details below.</p>
+        <form id="newAttendeeForm">
+          <div class="new-attendee-row">
             <div class="field" style="margin-bottom:0">
-              <label for="newFamilyName">Family name</label>
-              <input id="newFamilyName" type="text" placeholder="e.g. Smith family" required autocomplete="off" />
+              <label for="newAttendeeName">Full name</label>
+              <input id="newAttendeeName" type="text" placeholder="e.g. Maria Montemayor" required autocomplete="name" />
             </div>
             <div class="field" style="margin-bottom:0">
-              <label for="newFamilyCount">People</label>
-              <input id="newFamilyCount" type="number" min="1" max="50" value="2" />
+              <label for="newAttendeeFamily">Family group</label>
+              <input id="newAttendeeFamily" type="text" placeholder="e.g. Montemayor Tatum" required autocomplete="off" />
+            </div>
+            <div class="field" style="margin-bottom:0">
+              <label for="newAttendeeType">Type</label>
+              <select id="newAttendeeType">
+                <option value="adult">Adult</option>
+                <option value="child">Child</option>
+              </select>
             </div>
           </div>
           <div style="margin-top:var(--space-4)">

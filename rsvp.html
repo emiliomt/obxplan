@@ -21,11 +21,11 @@
         </div>
         <div class="brand-text">
           <h1>OBX Family Itinerary</h1>
-          <p>Viewing as: <strong id="familyNavName">…</strong></p>
+          <p>Viewing as: <strong id="attendeeNavName">…</strong></p>
         </div>
       </a>
       <div class="topbar-actions">
-        <a href="index.html" class="page-link">← Change family</a>
+        <a href="index.html" class="page-link">← Change person</a>
         <a href="admin.html" class="page-link admin-link">Admin</a>
         <button class="theme-toggle" data-theme-toggle aria-label="Switch theme">☾ Theme</button>
       </div>
@@ -33,28 +33,19 @@
 
     <main id="main" class="layout">
 
-      <!-- Sidebar -->
-      <aside class="panel" aria-label="Family panel">
-        <h3 id="currentFamilyName">…</h3>
-        <p>Update your headcount and RSVP to each event below.</p>
+      <aside class="panel" aria-label="Your summary">
+        <h3 id="currentAttendeeName">…</h3>
+        <p id="currentAttendeeMeta" class="family-status">…</p>
+        <p class="tiny" style="margin-top:var(--space-3)">Each event lists every attendee. The count on the card is how many people are marked Going.</p>
 
-        <div class="field">
-          <label for="familyCountInput">Total people in your group</label>
-          <input id="familyCountInput" type="number" min="0" max="50" step="1" value="1" />
+        <div class="toolbar" style="margin-top:var(--space-4)">
+          <button class="secondary-btn" id="fillGroupDinnersBtn">All dinners — my family group</button>
+          <button class="ghost-btn" id="copySummaryBtn">Copy my summary</button>
         </div>
 
-        <div class="toolbar" style="margin-bottom:var(--space-4)">
-          <button class="primary-btn" id="applyCountBtn">Save headcount</button>
-        </div>
-        <div class="toolbar">
-          <button class="secondary-btn" id="fillAllYesBtn">Confirm all dinners</button>
-          <button class="ghost-btn" id="copySummaryBtn">Copy summary</button>
-        </div>
-
-        <div class="summary-grid" id="familySummary"></div>
+        <div class="summary-grid" id="attendeeSummary"></div>
       </aside>
 
-      <!-- Main itinerary -->
       <section aria-label="Itinerary">
         <div class="toolbar">
           <button class="ghost-btn" id="showAllBtn">All events</button>
@@ -68,8 +59,7 @@
 
         <p class="footer-note">
           RSVPs are saved live. Share this page's URL to let others RSVP from any device.
-          The headcount pill on each card sums only families that clicked "Going."
-          July 11 is Outer Banks Boil Company in Corolla — a final seafood boil at the house, not a restaurant reservation.
+          Totals count individual attendees marked Going, not household headcount.
         </p>
       </section>
 

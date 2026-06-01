@@ -1,76 +1,92 @@
-// Landing page: display families, let user select or create one
+// Landing page: select or create an attendee
 
-let families = [];
+let attendees = [];
 
 async function init() {
   initThemeToggle();
-  await loadFamilies();
+  await loadAttendees();
 
-  db.subscribeToChanges(['families'], async () => {
-    families = await db.getFamilies();
-    renderFamilies();
+  db.subscribeToChanges(['attendees'], async () => {
+    attendees = await db.getAttendees();
+    renderAttendees();
   });
 
-  document.getElementById('newFamilyForm').addEventListener('submit', handleCreate);
+  document.getElementById('newAttendeeForm').addEventListener('submit', handleCreate);
 }
 
-async function loadFamilies() {
+async function loadAttendees() {
   try {
-    families = await db.getFamilies();
-    renderFamilies();
+    attendees = await db.getAttendees();
+    renderAttendees();
   } catch (err) {
-    showToast('Could not load families — check your Supabase config.', 'error');
+    showToast('Could not load attendees. Run supabase/migrate-to-attendees.sql in Supabase first.', 'error');
   }
 }
 
-function renderFamilies() {
-  const list = document.getElementById('familyList');
+function groupAttendees(list) {
+  const groups = new Map();
+  list.forEach(a => {
+    const key = a.family_group || 'Other';
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(a);
+  });
+  return [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+}
 
-  if (families.length === 0) {
-    list.innerHTML = '<p class="empty-state">No families yet — add yours below.</p>';
+function renderAttendees() {
+  const list = document.getElementById('attendeeList');
+
+  if (attendees.length === 0) {
+    list.innerHTML = '<p class="empty-state">No attendees yet — add yourself below after running the database migration.</p>';
     return;
   }
 
-  list.innerHTML = families.map(f => `
-    <button class="family-option" onclick="selectFamily('${f.id}')">
-      <div>
-        <div class="family-option-name">${escapeHtml(f.name)}</div>
-        <div class="family-option-meta">${f.headcount} ${f.headcount === 1 ? 'person' : 'people'}</div>
+  const grouped = groupAttendees(attendees);
+  list.innerHTML = grouped.map(([familyGroup, members]) => `
+    <div class="attendee-group">
+      <h3 class="attendee-group-title">${escapeHtml(familyGroup)}</h3>
+      <div class="family-grid">
+        ${members.map(a => `
+          <button class="family-option" type="button" onclick="selectAttendee('${a.id}')">
+            <div>
+              <div class="family-option-name">${escapeHtml(a.full_name)}</div>
+              <div class="family-option-meta">${a.type === 'child' ? 'Child' : 'Adult'}</div>
+            </div>
+            <span class="chip-sm">Select →</span>
+          </button>
+        `).join('')}
       </div>
-      <span class="chip-sm">Select →</span>
-    </button>
+    </div>
   `).join('');
 }
 
-function selectFamily(id) {
-  window.location.href = `rsvp.html?family=${encodeURIComponent(id)}`;
+function selectAttendee(id) {
+  window.location.href = `rsvp.html?attendee=${encodeURIComponent(id)}`;
 }
-window.selectFamily = selectFamily;
+window.selectAttendee = selectAttendee;
 
 async function handleCreate(e) {
   e.preventDefault();
-  const nameInput  = document.getElementById('newFamilyName');
-  const countInput = document.getElementById('newFamilyCount');
-  const btn        = document.getElementById('createBtn');
+  const nameInput   = document.getElementById('newAttendeeName');
+  const familyInput = document.getElementById('newAttendeeFamily');
+  const typeInput   = document.getElementById('newAttendeeType');
+  const btn         = document.getElementById('createBtn');
 
-  const name      = nameInput.value.trim();
-  const headcount = Math.max(0, parseInt(countInput.value, 10) || 1);
-  if (!name) { nameInput.focus(); return; }
+  const fullName    = nameInput.value.trim();
+  const familyGroup = familyInput.value.trim();
+  const type        = typeInput.value === 'child' ? 'child' : 'adult';
+  if (!fullName || !familyGroup) return;
 
   btn.disabled = true;
   btn.textContent = 'Adding…';
 
   try {
-    const family = await db.createFamily(name, headcount);
-    window.location.href = `rsvp.html?family=${encodeURIComponent(family.id)}`;
+    const attendee = await db.createAttendee(fullName, familyGroup, type);
+    window.location.href = `rsvp.html?attendee=${encodeURIComponent(attendee.id)}`;
   } catch (err) {
-    if (err.code === '23505') {
-      showToast('A family with that name already exists — select it from the list above.', 'error');
-    } else {
-      showToast('Could not create family: ' + err.message, 'error');
-    }
+    showToast('Could not add attendee: ' + err.message, 'error');
     btn.disabled = false;
-    btn.textContent = 'Join trip';
+    btn.textContent = 'Join trip →';
   }
 }
 
