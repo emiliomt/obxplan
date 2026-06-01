@@ -396,12 +396,12 @@ const EVENT_LOCALES = [
     }
   },
   {
-    match: ev => /roanoke|manteo|bodie/i.test(`${ev.title} ${ev.restaurant}`),
+    match: ev => /roanoke|manteo|bodie|1587/i.test(`${ev.title} ${ev.restaurant}`),
     es: {
       title: 'Cena Roanoke / Manteo / Bodie',
-      area: 'Zona Manteo',
-      description: 'Cena frente al agua aún por confirmar.',
-      note: 'Rango de reservación: 15–19 personas.'
+      area: 'Manteo',
+      description: 'Opción de cena en Manteo que mantiene al grupo cerca de los planes de Roanoke / Bodie del día y añade variedad más allá de platos muy centrados en mariscos.',
+      note: 'Rango de reservación: 15–19 personas. Actualizada para más variedad y para alinear la cena con la zona de Manteo.'
     }
   },
   {

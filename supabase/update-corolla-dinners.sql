@@ -40,7 +40,13 @@ update events set
   note = 'Working count can be approximate. Dinners are kept close to Corolla unless the day''s activities already place the group farther south.'
 where date = 'July 6' and event_type = 'dinner';
 
+-- July 9 — 1587 Restaurant & Lounge (Manteo)
 update events set
-  description = 'Waterfront dinner still to be finalized — Manteo area while the group explores Roanoke / Bodie that day.',
-  note = 'Working reservation range: 15–19 people. Dinners are kept close to Corolla unless the day''s activities already place the group farther south.'
+  title       = 'Roanoke / Manteo / Bodie dinner',
+  area        = 'Manteo',
+  restaurant  = '1587 Restaurant & Lounge',
+  description = 'A Manteo dinner option that keeps the group close to the day''s Roanoke / Bodie plans while adding more variety beyond seafood-heavy meals. This gives the itinerary a more balanced mix of cuisines for the week.',
+  note        = 'Working reservation range: 15–19 people. Updated for more variety and to keep dinner aligned with the Manteo area.',
+  link        = 'https://www.tranquilhouseinn.com/food-drink-1587-lounge',
+  reserve     = true
 where date = 'July 9' and event_type = 'dinner';

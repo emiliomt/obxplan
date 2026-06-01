@@ -67,11 +67,11 @@ create policy "rsvps_update" on rsvps for update using (true);
 insert into events
   (day, date, title, area, event_type, reserve, restaurant, description, note, link, sort_order)
 values
-  ('Day 1',  'July 5',    'Arrival + first group dinner',    'Corolla',
-   'dinner',   true,  'La Dolce Vita',
-   'A relaxed first-night group dinner in Corolla with Italian food, pizza, pasta, and classic comfort dishes. This keeps the first evening close to the house and adds more cuisine variety to the trip.',
-   'Current working reservation target: 14 people. Chosen as a closer first-night option in Corolla with broader appeal beyond seafood.',
-   'https://www.ladolcevitacorolla.com/', 10),
+  ('Day 1',  'July 5',    'Arrival + first group dinner',    'Kill Devil Hills',
+   'dinner',   true,  'Kill Devil Grill',
+   'Large casual dinner replacing Henry''s, which is closed.',
+   'Current working reservation target: 14 people.',
+   'https://www.killdevilgrillobx.com', 10),
 
   ('Day 2',  'July 6',    'Waterfront group dinner',         'Nags Head / soundside',
    'dinner',   false, 'Miller''s Waterfront Restaurant',
@@ -97,11 +97,11 @@ values
    'Current working reservation target: 19 people.',
    'https://www.captaingeorges.com/', 50),
 
-  ('Day 5',  'July 9',    'Roanoke / Manteo / Bodie dinner', 'Manteo area',
-   'dinner',   true,  'Tale of the Whale or Basnight''s Lone Cedar Cafe',
-   'Waterfront dinner still to be finalized.',
-   'Working reservation range: 15–19 people.',
-   'https://www.outerbanks.com/', 60),
+  ('Day 5',  'July 9',    'Roanoke / Manteo / Bodie dinner', 'Manteo',
+   'dinner',   true,  '1587 Restaurant & Lounge',
+   'A Manteo dinner option that keeps the group close to the day''s Roanoke / Bodie plans while adding more variety beyond seafood-heavy meals. This gives the itinerary a more balanced mix of cuisines for the week.',
+   'Working reservation range: 15–19 people. Updated for more variety and to keep dinner aligned with the Manteo area.',
+   'https://www.tranquilhouseinn.com/food-drink-1587-lounge', 60),
 
   ('Day 6',  'July 10',   'Beach horseback ride',            'Frisco / Hatteras',
    'activity', true,  'Equine Adventures',
