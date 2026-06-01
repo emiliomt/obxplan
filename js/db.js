@@ -38,7 +38,7 @@ const db = {
   async getEvents() {
     const { data, error } = await _db.from('events').select('*').order('sort_order');
     if (error) throw error;
-    return data ?? [];
+    return data;
   },
 
   async updateEvent(id, fields) {
@@ -67,7 +67,7 @@ const db = {
       .from('rsvps')
       .select('*, families(id, name, headcount)');
     if (error) throw error;
-    return data;
+    return data ?? [];
   },
 
   async upsertRsvp(familyId, eventId, going) {
