@@ -83,7 +83,7 @@
         <h3 data-i18n="addAttendeeTitle">Add an attendee</h3>
         <p data-i18n="addAttendeeLead">Not on the list yet? Enter your details below.</p>
         <form id="newAttendeeForm">
-          <div class="new-attendee-row">
+          <div class="new-attendee-row new-attendee-row--party">
             <div class="field" style="margin-bottom:0">
               <label for="newAttendeeName" data-i18n="labelFullName">Full name</label>
               <input id="newAttendeeName" type="text" data-i18n-placeholder="placeholderName" placeholder="e.g. Maria Montemayor" required autocomplete="name" />
@@ -98,6 +98,11 @@
                 <option value="adult" data-i18n-option="typeAdult">Adult</option>
                 <option value="child" data-i18n-option="typeChild">Child</option>
               </select>
+            </div>
+            <div class="field" style="margin-bottom:0">
+              <label for="newAttendeeMaxParty" data-i18n="labelMaxPartySize">Max party size (including you)</label>
+              <input id="newAttendeeMaxParty" type="number" min="1" max="20" value="4" />
+              <p class="tiny" data-i18n="partySizeHelp">How many people you may count per event RSVP</p>
             </div>
           </div>
           <div style="margin-top:var(--space-4)">
@@ -115,7 +120,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js?v=i18n1"></script>
-  <script src="js/i18n.js?v=i18n1"></script>
+  <script src="js/attendee-config.js?v=party1"></script>
+  <script src="js/i18n.js?v=party1"></script>
   <script src="js/db.js?v=i18n1"></script>
   <script src="js/utils.js?v=i18n1"></script>
   <script src="js/index.js?v=i18n1"></script>

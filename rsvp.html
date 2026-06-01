@@ -40,7 +40,8 @@
       <aside class="panel" data-i18n-attr="aria-label" data-i18n="sidebarAria" aria-label="Your summary">
         <h3 id="currentAttendeeName">…</h3>
         <p id="currentAttendeeMeta" class="family-status">…</p>
-        <p class="tiny" style="margin-top:var(--space-3)" data-i18n="sidebarExpandHint">Expand activity cards for full details before you RSVP. Counts show individuals marked Going.</p>
+        <p id="partyLimitHint" class="notice party-limit-hint" hidden></p>
+        <p class="tiny" style="margin-top:var(--space-3)" data-i18n="sidebarExpandHint">Expand activity cards for full details before you RSVP. Count pills sum party sizes (including the person RSVPing).</p>
 
         <div class="toolbar" style="margin-top:var(--space-4)">
           <button class="secondary-btn" id="fillGroupDinnersBtn" data-i18n="btnGroupDinners">All dinners — my family group</button>
@@ -89,10 +90,11 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js?v=i18n1"></script>
-  <script src="js/i18n.js?v=i18n1"></script>
-  <script src="js/db.js?v=i18n1"></script>
+  <script src="js/attendee-config.js?v=party1"></script>
+  <script src="js/i18n.js?v=party1"></script>
+  <script src="js/db.js?v=party1"></script>
   <script src="js/utils.js?v=i18n1"></script>
   <script src="js/activity-enrichment.js?v=i18n1"></script>
-  <script src="js/rsvp.js?v=i18n1"></script>
+  <script src="js/rsvp.js?v=party1"></script>
 </body>
 </html>

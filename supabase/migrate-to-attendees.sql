@@ -6,6 +6,7 @@ create table if not exists attendees (
   full_name    text not null,
   family_group text not null default '',
   type         text not null default 'adult' check (type in ('adult', 'child')),
+  max_party_size int not null default 1 check (max_party_size >= 1 and max_party_size <= 20),
   created_at   timestamptz default now()
 );
 
@@ -33,6 +34,9 @@ create table if not exists attendee_rsvps (
   attendee_id uuid not null references attendees(id) on delete cascade,
   event_id    uuid not null references events(id)   on delete cascade,
   going       boolean not null default false,
+  attending   boolean,
+  party_size  int not null default 0,
+  extra_guest_names jsonb not null default '[]'::jsonb,
   updated_at  timestamptz default now(),
   constraint attendee_rsvps_unique unique (attendee_id, event_id)
 );

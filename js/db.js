@@ -1,4 +1,4 @@
-// Supabase client + database helpers (attendee-based RSVPs)
+// Supabase client + database helpers (attendee-based party-size RSVPs)
 const { createClient } = supabase;
 const _db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -21,10 +21,17 @@ const db = {
     return data;
   },
 
-  async createAttendee(fullName, familyGroup, type) {
+  async createAttendee(fullName, familyGroup, type, maxPartySize) {
+    const cfg = window.ATTENDEE_CONFIG || { defaultMaxPartyAdult: 4, defaultMaxPartyChild: 1 };
+    const max = maxPartySize ?? (type === 'child' ? cfg.defaultMaxPartyChild : cfg.defaultMaxPartyAdult);
     const { data, error } = await _db
       .from('attendees')
-      .insert({ full_name: fullName, family_group: familyGroup, type })
+      .insert({
+        full_name: fullName,
+        family_group: familyGroup,
+        type,
+        max_party_size: max
+      })
       .select()
       .single();
     if (error) throw error;
@@ -69,16 +76,34 @@ const db = {
   async getAllAttendeeRsvps() {
     const { data, error } = await _db
       .from('attendee_rsvps')
-      .select('*, attendees(id, full_name, family_group, type)');
+      .select('*, attendees(id, full_name, family_group, type, max_party_size)');
     if (error) throw error;
-    return data ?? [];
+    return (data ?? []).map(normalizeRsvpRow);
   },
 
-  async upsertAttendeeRsvp(attendeeId, eventId, going) {
-    const { error } = await _db.from('attendee_rsvps').upsert(
-      { attendee_id: attendeeId, event_id: eventId, going, updated_at: new Date().toISOString() },
-      { onConflict: 'attendee_id,event_id' }
-    );
+  /**
+   * @param {{ attending: boolean, partySize: number, extraGuestNames?: string[] }} payload
+   */
+  async upsertAttendeeRsvp(attendeeId, eventId, payload) {
+    const attending = !!payload.attending;
+    const partySize = attending ? Math.max(1, payload.partySize || 1) : 0;
+    const extraGuestNames = attending && partySize > 1
+      ? (payload.extraGuestNames || []).slice(0, partySize - 1)
+      : [];
+
+    const row = {
+      attendee_id: attendeeId,
+      event_id: eventId,
+      attending,
+      going: attending,
+      party_size: partySize,
+      extra_guest_names: extraGuestNames,
+      updated_at: new Date().toISOString()
+    };
+
+    const { error } = await _db.from('attendee_rsvps').upsert(row, {
+      onConflict: 'attendee_id,event_id'
+    });
     if (error) throw error;
   },
 
@@ -95,3 +120,27 @@ const db = {
     _db.removeChannel(channel);
   }
 };
+
+function normalizeRsvpRow(r) {
+  const attending = r.attending != null ? r.attending : !!r.going;
+  let partySize = parseInt(r.party_size, 10);
+  if (Number.isNaN(partySize)) partySize = attending ? 1 : 0;
+  if (!attending) partySize = 0;
+  else if (partySize < 1) partySize = 1;
+
+  let extra = r.extra_guest_names;
+  if (typeof extra === 'string') {
+    try { extra = JSON.parse(extra); } catch { extra = []; }
+  }
+  if (!Array.isArray(extra)) extra = [];
+
+  return {
+    ...r,
+    attending,
+    going: attending,
+    party_size: partySize,
+    extra_guest_names: extra.slice(0, Math.max(0, partySize - 1))
+  };
+}
+
+window.normalizeRsvpRow = normalizeRsvpRow;

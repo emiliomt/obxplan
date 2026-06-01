@@ -70,7 +70,7 @@ function renderAttendees() {
           <button class="family-option" type="button" onclick="selectAttendee('${a.id}')">
             <div>
               <div class="family-option-name">${escapeHtml(a.full_name)}</div>
-              <div class="family-option-meta">${a.type === 'child' ? I18n.t('typeChild') : I18n.t('typeAdult')}</div>
+              <div class="family-option-meta">${a.type === 'child' ? I18n.t('typeChild') : I18n.t('typeAdult')} · ${I18n.t('partyCapShort', { max: a.max_party_size || 1 })}</div>
             </div>
             <span class="chip-sm">${escapeHtml(I18n.t('btnSelect'))}</span>
           </button>
@@ -95,13 +95,18 @@ async function handleCreate(e) {
   const fullName    = nameInput.value.trim();
   const familyGroup = familyInput.value.trim();
   const type        = typeInput.value === 'child' ? 'child' : 'adult';
+  const cfg = window.ATTENDEE_CONFIG || { defaultMaxPartyAdult: 4, defaultMaxPartyChild: 1 };
+  const maxInput    = document.getElementById('newAttendeeMaxParty');
+  let maxParty = parseInt(maxInput?.value, 10);
+  if (Number.isNaN(maxParty)) maxParty = type === 'child' ? cfg.defaultMaxPartyChild : cfg.defaultMaxPartyAdult;
+  maxParty = Math.min(20, Math.max(1, maxParty));
   if (!fullName || !familyGroup) return;
 
   btn.disabled = true;
   btn.textContent = I18n.t('btnAdding');
 
   try {
-    const attendee = await db.createAttendee(fullName, familyGroup, type);
+    const attendee = await db.createAttendee(fullName, familyGroup, type, maxParty);
     window.location.href = `rsvp.html?attendee=${encodeURIComponent(attendee.id)}`;
   } catch (err) {
     showToast(I18n.t('toastAddAttendeeError') + ' ' + err.message, 'error');
